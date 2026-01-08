@@ -372,6 +372,8 @@
         let idleTimer;
         let countdownTimer;
         let matrixInterval;
+        let userHasTyped = false; // Figyeljük, hogy írt-e már a felhasználó
+
         const matrixCanvas = document.getElementById('matrix-canvas');
         const ctx = matrixCanvas.getContext('2d');
         const countdownEl = document.getElementById('countdown-overlay');
@@ -418,7 +420,9 @@
             // Ha már GUI módban vagyunk, ne induljon el
             if(guiView.classList.contains('show-gui')) return;
 
-            // 7 másodperc múlva visszaszámlálás
+            // Időzítés: Alapból 7mp (össz 10), ha írt már, akkor 17mp (össz 20)
+            const waitTime = userHasTyped ? 17000 : 7000;
+
             idleTimer = setTimeout(() => {
                 let count = 3;
                 countdownEl.innerText = count;
@@ -429,13 +433,12 @@
                     if(count > 0) {
                         countdownEl.innerText = count;
                     } else {
-                        // ITT A VÉGE: 10mp letelt -> MATRIX START
                         clearInterval(countdownTimer);
                         countdownEl.style.display = 'none';
                         launchMatrixTransition();
                     }
                 }, 1000);
-            }, 7000);
+            }, waitTime);
         }
 
         function launchMatrixTransition() {
@@ -452,6 +455,7 @@
         }
 
         function resetAllTimers() {
+            userHasTyped = true; // Jelöljük, hogy volt aktivitás
             startIdleTimer();
         }
 
