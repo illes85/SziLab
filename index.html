@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="hu" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SziLab | Szilágyi Illés</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0d9488', /* Teal-600 - Ez lesz az új "SziLab szín" */
+                        secondary: '#0f172a', /* Slate-900 */
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* --- TERMINÁL SPECIFIKUS STÍLUSOK (Hogy a Tailwind ne rontsa el) --- */
+        :root {
+            --term-color: #33ff00;
+            --term-bg: #0d1117;
+        }
+
+        /* A terminál nézetnek felül kell írnia a Tailwind alapbeállításait */
+        #terminal-view {
+            background-color: var(--term-bg);
+            color: var(--term-color);
+            font-family: 'VT323', monospace;
+            font-size: 22px;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed; /* Fixed, hogy mindent eltakarjon */
+            top: 0;
+            left: 0;
+            z-index: 50; /* Legyen legfelül */
+            transition: all 1.2s ease-in-out;
+            line-height: 1.2; /* Tailwind reset korrigálása */
+        }
+
+        #terminal-view * {
+            font-family: 'VT323', monospace; /* Biztosítjuk, hogy minden elem örökölje */
+        }
+
+        .crt::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .container-term {
+            width: 90%;
+            max-width: 800px;
+            height: 80vh;
+            overflow-y: auto;
+            text-shadow: 0 0 5px rgba(51, 255, 0, 0.4);
+        }
+        
+        .container-term::-webkit-scrollbar { display: none; }
+        .container-term { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .input-area { display: flex; margin-top: 10px; }
+        .prompt { margin-right: 10px; font-weight: bold; }
+        
+        #cmd {
+            background: transparent;
+            border: none;
+            color: var(--term-color);
+            font-size: 22px;
+            outline: none;
+            flex-grow: 1;
+            caret-color: var(--term-color);
+            text-transform: lowercase;
+            text-shadow: 0 0 2px rgba(51, 255, 0, 0.4);
+            font-family: 'VT323', monospace;
+        }
+
+        .hidden { display: none !important; }
+        a.term-link { color: #fff; text-decoration: underline; cursor: pointer; }
+        a.term-link:hover { color: var(--term-color); background: #000; }
+
+        /* --- ANIMÁCIÓK --- */
+        .fade-out-terminal {
+            opacity: 0;
+            transform: scale(1.1);
+            filter: blur(5px);
+            pointer-events: none;
+        }
+
+        /* --- GUI NÉZET (Tailwind kezeli a belsejét) --- */
+        #gui-view {
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+            height: 0; /* Alapból ne foglaljon helyet */
+            overflow: hidden;
+        }
+
+        .show-gui {
+            opacity: 1 !important;
+            height: auto !important;
+            overflow: visible !important;
+        }
+
+        /* --- IDLE & MATRIX FX --- */
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 60; /* Terminal (50) fölé */
+            pointer-events: none;
+            display: none;
+            opacity: 0.8;
+        }
+
+        #countdown-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 15rem;
+            color: rgba(51, 255, 0, 0.2);
+            z-index: 55;
+            font-family: 'VT323', monospace;
+            display: none;
+            pointer-events: none;
+            text-shadow: 0 0 30px rgba(51, 255, 0, 0.8);
+            animation: pulse-count 1s infinite;
+        }
+
+        @keyframes pulse-count {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+        }
+
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <canvas id="matrix-canvas"></canvas>
+    <div id="countdown-overlay"></div>
+
+    <div id="terminal-view" class="crt" onclick="document.getElementById('cmd').focus()">
+        <div class="container-term" id="terminal">
+            <div id="output"></div>
+            <div class="input-area hidden" id="input-line">
+                <span class="prompt">visitor@szilab:~$</span>
+                <input type="text" id="cmd" autocomplete="off" spellcheck="false" autofocus>
+            </div>
+            
+            <div id="manual-override" class="hidden" style="margin-top: 30px; border-top: 1px dashed #33ff00; padding-top: 10px; font-size: 0.8em; color: #fff;">
+                [TIPP]: Írd be a <span style="color:yellow">'start'</span> parancsot a grafikus felülethez, vagy <a class="term-link" onclick="triggerGui()">kattints ide</a>.
+            </div>
+        </div>
+    </div>
+
+    <div id="gui-view">
+        
+        <nav class="flex justify-between items-center p-6 max-w-7xl mx-auto">
+            <div class="text-2xl font-bold text-slate-900">SziLab<span class="text-primary">.</span></div>
+            <div class="hidden md:flex space-x-8 text-sm font-semibold">
+                <a href="#szolgaltatasok" class="hover:text-primary transition">Szolgáltatások</a>
+                <a href="#munkak" class="hover:text-primary transition">Referenciák</a>
+                <a href="#arak" class="hover:text-primary transition">Árak</a>
+            </div>
+            <a href="#kapcsolat" class="bg-slate-900 text-white px-5 py-2 rounded-full font-medium hover:bg-primary transition duration-300">
+                Kapcsolat
+            </a>
+        </nav>
+
+        <header class="max-w-7xl mx-auto px-6 py-16 md:py-24 flex flex-col md:flex-row items-center">
+            <div class="md:w-1/2 md:pr-10">
+                <span class="text-primary font-bold tracking-wider uppercase text-sm mb-2 block">Szilágyi Illés - Webfejlesztés Fót</span>
+                <h1 class="text-5xl md:text-6xl font-extrabold leading-tight text-slate-900 mb-6">
+                    Nem csak kódolok.<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-blue-600">Megoldást építek.</span>
+                </h1>
+                <p class="text-lg text-slate-600 mb-8 leading-relaxed">
+                    Egyedi fejlesztések, gyors weboldalak és automatizált rendszerek. A SziLab a digitális ötleteid műhelye, ahol a technológia érted dolgozik.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="#munkak" class="text-center bg-primary text-white px-8 py-4 rounded-lg font-bold shadow-lg hover:shadow-teal-500/30 hover:-translate-y-1 transition duration-300">
+                        Mit csináltam eddig?
+                    </a>
+                    <a href="#kapcsolat" class="text-center border-2 border-slate-200 text-slate-700 px-8 py-4 rounded-lg font-bold hover:border-slate-900 hover:text-slate-900 transition duration-300">
+                        Konzultáció
+                    </a>
+                </div>
+                
+                <div class="mt-8 flex items-center gap-2 text-sm text-slate-500">
+                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span>Full-stack szemlélet</span>
+                </div>
+            </div>
+
+            <div class="md:w-1/2 mt-12 md:mt-0 relative">
+                <div class="absolute -inset-4 bg-gradient-to-r from-teal-200 to-blue-200 rounded-full blur-3xl opacity-30 animate-pulse"></div>
+                <div class="relative bg-white p-6 rounded-2xl shadow-2xl border border-slate-100">
+                    <div class="bg-slate-100 rounded h-64 w-full flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-300">
+                        <svg class="w-12 h-12 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                        <span class="text-sm font-mono">&lt;SziLab /&gt;</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <section id="szolgaltatasok" class="max-w-7xl mx-auto px-6 py-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">
+                    Miben segíthetek?
+                </h2>
+                <p class="text-xl text-slate-600 max-w-3xl mx-auto">
+                    A sablonmegoldásoktól az egyedi rendszerfejlesztésig.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white p-8 rounded-xl shadow-xl border-t-4 border-primary hover:shadow-2xl transition duration-300 transform hover:-translate-y-1">
+                    <div class="text-primary mb-4">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-slate-900 mb-3">Weboldal Készítés</h3>
+                    <p class="text-slate-600 mb-5">
+                        Modern, gyors és reszponzív weboldalak. Legyen szó bemutatkozó oldalról vagy komplexebb portálról.
+                    </p>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-xl border-t-4 border-slate-900 hover:shadow-2xl transition duration-300 transform hover:-translate-y-1">
+                    <div class="text-slate-900 mb-4">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-slate-900 mb-3">Egyedi Fejlesztés</h3>
+                    <p class="text-slate-600 mb-5">
+                        Amikor a WordPress már kevés. Egyedi funkciók, kalkulátorok, adatbázis-kezelők, API integrációk.
+                    </p>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-xl border-t-4 border-primary hover:shadow-2xl transition duration-300 transform hover:-translate-y-1">
+                    <div class="text-primary mb-4">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-slate-900 mb-3">Webshop & E-ker</h3>
+                    <p class="text-slate-600 mb-5">
+                        Értékesíts online hatékonyan. WooCommerce vagy egyedi shop motor beüzemelése és testreszabása.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="munkak" class="max-w-7xl mx-auto px-6 py-20 bg-white">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">Munkák & Projektek</h2>
+                <p class="text-xl text-slate-600">Amit a laborban eddig összeraktam.</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+                <div class="bg-slate-50 rounded-xl shadow-lg p-6 flex items-center justify-center h-48 border border-slate-200">
+                    <span class="text-slate-400 italic">Hamarosan...</span>
+                </div>
+                <div class="bg-slate-50 rounded-xl shadow-lg p-6 flex items-center justify-center h-48 border border-slate-200">
+                    <span class="text-slate-400 italic">Hamarosan...</span>
+                </div>
+                <div class="bg-slate-50 rounded-xl shadow-lg p-6 flex items-center justify-center h-48 border border-slate-200">
+                    <span class="text-slate-400 italic">Hamarosan...</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="arak" class="max-w-7xl mx-auto px-6 py-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">Irányárak</h2>
+                <p class="text-xl text-slate-600">Nincsenek rejtett költségek, csak tiszta kód.</p>
+            </div>
+            <div class="grid lg:grid-cols-3 gap-8 items-start">
+                <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+                    <h3 class="text-2xl font-bold text-slate-900 mb-2">Start</h3>
+                    <p class="text-slate-600 mb-6">Gyors bemutatkozó oldal.</p>
+                    <div class="mb-8"><span class="text-4xl font-extrabold text-slate-900">89.000</span><span class="text-slate-500"> Ft-tól</span></div>
+                    <a href="#kapcsolat" class="block text-center border-2 border-slate-200 text-slate-700 px-8 py-3 rounded-lg font-bold hover:border-slate-900 transition">Érdekel</a>
+                </div>
+                <div class="bg-slate-900 p-8 rounded-2xl shadow-2xl border-4 border-primary transform scale-105">
+                    <p class="text-sm font-bold text-teal-400 uppercase mb-3">Legnépszerűbb</p>
+                    <h3 class="text-2xl font-bold text-white mb-2">Business</h3>
+                    <p class="text-slate-300 mb-6">Több aloldal, blog, SEO.</p>
+                    <div class="mb-8"><span class="text-4xl font-extrabold text-white">149.000</span><span class="text-slate-400"> Ft-tól</span></div>
+                    <a href="#kapcsolat" class="block text-center bg-primary text-white px-8 py-3 rounded-lg font-bold hover:bg-teal-700 transition">Ezt választom</a>
+                </div>
+                <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+                    <h3 class="text-2xl font-bold text-slate-900 mb-2">Egyedi</h3>
+                    <p class="text-slate-600 mb-6">Webshop vagy specifikus funkciók.</p>
+                    <div class="mb-8"><span class="text-4xl font-extrabold text-slate-900">Egyedi</span><span class="text-slate-500"> árazás</span></div>
+                    <a href="#kapcsolat" class="block text-center border-2 border-slate-200 text-slate-700 px-8 py-3 rounded-lg font-bold hover:border-slate-900 transition">Ajánlatot kérek</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="kapcsolat" class="bg-slate-900 py-20 px-6 mt-10">
+            <div class="max-w-4xl mx-auto text-center">
+                <h2 class="text-3xl md:text-4xl font-extrabold text-white mb-6">Kezdjük el a projektet!</h2>
+                <p class="text-lg text-slate-400 mb-8">
+                    Írd meg az elképzelésed, és beszéljük át a részleteket.
+                </p>
+                <div class="flex flex-col md:flex-row justify-center items-center gap-8 text-white">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        <a href="mailto:hello@szilab.hu" class="text-xl font-semibold hover:text-primary transition">hello@szilab.hu</a>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        <span class="text-xl">Fót / Budapest</span>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-16 text-slate-500 text-sm">
+                &copy; 2026 SziLab - Szilágyi Illés. Minden jog fenntartva.
+            </div>
+            <div class="text-center mt-4 pb-8">
+                <button onclick="triggerTerminal()" class="text-slate-500 text-xs hover:text-primary transition opacity-60 hover:opacity-100 font-mono">
+                    > visszalépés a terminál módba
+                </button>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // --- KONFIGURÁCIÓ ---
+        const speed = 25; 
+        
+        const bootText = [
+            "Booting SziLab System...",
+            "Loading Core Modules... [OK]",
+            "Initializing Interface... [OK]",
+            "----------------------------------------",
+            "SZILAB.HU - DEVELOPMENT ENVIRONMENT",
+            "----------------------------------------",
+            "Szia! Szilágyi Illés vagyok.",
+            "Ez a fejlesztői bejárat (Terminal Mode).",
+            " ",
+            "Ha a weboldalamat keresed, írd be: 'start'",
+            " ",
+            "Ha maradnál a mátrixban, írd be: 'help'",
+            " "
+        ];
+
+        const outputDiv = document.getElementById('output');
+        const inputLine = document.getElementById('input-line');
+        const cmdInput = document.getElementById('cmd');
+        const manualOverride = document.getElementById('manual-override');
+        const terminalView = document.getElementById('terminal-view');
+        const guiView = document.getElementById('gui-view');
+
+        // --- MATRIX EFFECT & IDLE LOGIC ---
+        let idleTimer;
+        let countdownTimer;
+        let matrixInterval;
+        const matrixCanvas = document.getElementById('matrix-canvas');
+        const ctx = matrixCanvas.getContext('2d');
+        const countdownEl = document.getElementById('countdown-overlay');
+
+        // Matrix config
+        const matrixChars = "SZILAB01";
+        const fontSize = 16;
+        let columns;
+        let drops = [];
+
+        function initMatrix() {
+            matrixCanvas.width = window.innerWidth;
+            matrixCanvas.height = window.innerHeight;
+            columns = matrixCanvas.width / fontSize;
+            drops = [];
+            for (let x = 0; x < columns; x++) {
+                drops[x] = 1;
+            }
+        }
+
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+            ctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+
+            ctx.fillStyle = "#0F0"; 
+            ctx.font = fontSize + "px monospace";
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = matrixChars.charAt(Math.floor(Math.random() * matrixChars.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > matrixCanvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        function startIdleTimer() {
+            clearTimeout(idleTimer);
+            clearInterval(countdownTimer);
+            countdownEl.style.display = 'none';
+            
+            // Ha már GUI módban vagyunk, ne induljon el
+            if(guiView.classList.contains('show-gui')) return;
+
+            // 7 másodperc múlva visszaszámlálás
+            idleTimer = setTimeout(() => {
+                let count = 3;
+                countdownEl.innerText = count;
+                countdownEl.style.display = 'block';
+                
+                countdownTimer = setInterval(() => {
+                    count--;
+                    if(count > 0) {
+                        countdownEl.innerText = count;
+                    } else {
+                        // ITT A VÉGE: 10mp letelt -> MATRIX START
+                        clearInterval(countdownTimer);
+                        countdownEl.style.display = 'none';
+                        launchMatrixTransition();
+                    }
+                }, 1000);
+            }, 7000);
+        }
+
+        function launchMatrixTransition() {
+            initMatrix();
+            matrixCanvas.style.display = 'block';
+            matrixInterval = setInterval(drawMatrix, 33);
+            
+            // 2 másodperc "Matrix" után BUMM -> GUI
+            setTimeout(() => {
+                clearInterval(matrixInterval);
+                matrixCanvas.style.display = 'none';
+                triggerGui();
+            }, 2500);
+        }
+
+        function resetAllTimers() {
+            startIdleTimer();
+        }
+
+        // Event Listeners aktivitásra
+        document.addEventListener('keydown', resetAllTimers);
+
+
+        // --- GÉPELÉS ANIMÁCIÓ ---
+        async function typeWriter(text) {
+            const line = document.createElement('div');
+            // Kiemelés
+            if(text.includes("'start'")) text = text.replace("'start'", "<span style='color:yellow'>'start'</span>");
+            if(text.includes("'gui'")) text = text.replace("'gui'", "<span style='color:yellow'>'gui'</span>");
+            
+            line.innerHTML = text; 
+            line.style.marginBottom = "5px";
+            outputDiv.appendChild(line);
+            
+            window.scrollTo(0, document.body.scrollHeight);
+            const terminal = document.querySelector('.container-term');
+            terminal.scrollTop = terminal.scrollHeight;
+            await new Promise(r => setTimeout(r, speed * 2));
+        }
+
+        async function bootSequence() {
+            for (const line of bootText) {
+                const div = document.createElement('div');
+                let processedLine = line.replace("'start'", "<span style='color:#ffff00; font-weight:bold'>'start'</span>");
+                processedLine = processedLine.replace("'gui'", "<span style='color:#ffff00; font-weight:bold'>'gui'</span>");
+                
+                div.innerHTML = processedLine;
+                div.style.marginBottom = "5px";
+                outputDiv.appendChild(div);
+                const terminal = document.querySelector('.container-term');
+                terminal.scrollTop = terminal.scrollHeight;
+                await new Promise(r => setTimeout(r, 400));
+            }
+            inputLine.classList.remove('hidden');
+            manualOverride.classList.remove('hidden');
+            cmdInput.focus();
+            startIdleTimer(); // Indul a visszaszámlálás, ha a user nem csinál semmit
+        }
+
+        // --- GUI ÁTVÁLTÁS LOGIKA ---
+        function triggerGui() {
+            // Timer leállítása, hogy ne fusson a háttérben
+            clearTimeout(idleTimer);
+            clearInterval(countdownTimer);
+            countdownEl.style.display = 'none';
+
+            // 1. Terminál eltüntetése
+            terminalView.classList.add('fade-out-terminal');
+            
+            // 2. GUI megjelenítése (és görgetés engedélyezése)
+            setTimeout(() => {
+                terminalView.style.display = 'none'; // Teljesen kivesszük a flow-ból
+                guiView.classList.add('show-gui');
+                document.body.style.overflow = 'auto'; // Visszakapjuk a görgetést
+            }, 1000);
+        }
+
+        function triggerTerminal() {
+            // 1. GUI eltüntetése
+            guiView.classList.remove('show-gui');
+            
+            // 2. Terminál visszahozatala
+            terminalView.style.display = 'flex';
+            setTimeout(() => {
+                terminalView.classList.remove('fade-out-terminal');
+                document.body.style.overflow = 'hidden'; // Terminálban nincs görgetés
+                cmdInput.focus();
+                startIdleTimer(); // Újraindul a számláló
+            }, 50);
+        }
+
+        // --- BOT LOGIKA ---
+        const commands = {
+            'help': "PARANCSOK:<br> > start   :: Grafikus weboldal betöltése<br> > about   :: Rólam<br> > contact :: Kapcsolat<br> > clear   :: Törlés",
+            'about': "Webfejlesztés, automatizálás, egyedi megoldások. Fót / Budapest.",
+            'contact': "📧 hello@szilab.hu",
+            'sudo': "Nice try. 😉",
+            'ls': "index.html  secret_projects/",
+            'gui': "ACTION_GUI",
+            'start': "ACTION_GUI"
+        };
+
+        cmdInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const command = this.value.trim().toLowerCase();
+                
+                const userLine = document.createElement('div');
+                userLine.style.color = '#fff';
+                userLine.innerHTML = `<span class="prompt">visitor@szilab:~$</span> ${this.value}`;
+                outputDiv.appendChild(userLine);
+
+                let response = "";
+
+                if (command === 'gui' || command === 'start') {
+                    response = "Rendszer indítása...";
+                    triggerGui(); 
+                } 
+                else if (command === 'clear') {
+                    outputDiv.innerHTML = "";
+                } 
+                else if (commands[command]) {
+                    response = commands[command];
+                } 
+                else if (command === "") {
+                    response = ""; 
+                } 
+                else {
+                    response = `Ismeretlen parancs: '${command}'. Próbáld: 'start' vagy 'help'`;
+                }
+
+                if (response && command !== 'clear' && command !== 'gui' && command !== 'start') {
+                    const botLine = document.createElement('div');
+                    botLine.innerHTML = response;
+                    outputDiv.appendChild(botLine);
+                }
+
+                this.value = '';
+                const terminal = document.querySelector('.container-term');
+                terminal.scrollTop = terminal.scrollHeight;
+            }
+        });
+
+        setTimeout(bootSequence, 500);
+    </script>
+</body>
+</html>

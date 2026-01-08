@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SziLab | Szilágyi Illés</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --term-color: #33ff00;
+            --term-bg: #0d1117;
+            --gui-bg: #ffffff;
+            --gui-text: #2c3e50;
+            --accent: #2980b9;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* --- TERMINÁL NÉZET (DEFAULT) --- */
+        #terminal-view {
+            background-color: var(--term-bg);
+            color: var(--term-color);
+            font-family: 'VT323', monospace;
+            font-size: 22px;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 10;
+            transition: all 1s ease-in-out;
+        }
+
+        .crt::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            height: 80vh;
+            overflow-y: auto;
+            /* ITT VETTEM VISSZA A RAGYOGÁSBÓL: */
+            text-shadow: 0 0 6px rgba(51, 255, 0, 0.4); 
+        }
+        
+        /* Gördítősáv elrejtése */
+        .container::-webkit-scrollbar { display: none; }
+        .container { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .input-area { display: flex; margin-top: 10px; }
+        .prompt { margin-right: 10px; font-weight: bold; }
+        
+        input {
+            background: transparent;
+            border: none;
+            color: var(--term-color);
+            font-family: 'VT323', monospace;
+            font-size: 22px;
+            outline: none;
+            flex-grow: 1;
+            caret-color: var(--term-color);
+            text-transform: lowercase;
+            text-shadow: 0 0 2px rgba(51, 255, 0, 0.4); /* Input mező ragyogása is lágyabb */
+        }
+
+        .hidden { display: none; }
+        a.term-link { color: #fff; text-decoration: underline; cursor: pointer; }
+        a.term-link:hover { color: var(--term-color); background: #000; }
+
+        /* --- GUI NÉZET (MODERN) --- */
+        #gui-view {
+            background-color: var(--gui-bg);
+            color: var(--gui-text);
+            font-family: 'Montserrat', sans-serif;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            text-align: center;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: all 1.5s ease-out;
+        }
+
+        /* --- ANIMÁCIÓK --- */
+        .fade-out-terminal {
+            opacity: 0;
+            transform: scale(1.1);
+            filter: blur(5px); /* Ez maradt az a finomabb elmosás, amit előzőleg kértél */
+            pointer-events: none;
+        }
+
+        .fade-in-gui {
+            opacity: 1 !important;
+            transform: scale(1) !important;
+            z-index: 20 !important;
+        }
+
+        /* Modern elemek stílusa */
+        h1.modern-title { font-size: 3rem; margin-bottom: 10px; color: #222; }
+        p.modern-subtitle { font-size: 1.2rem; color: #666; margin-bottom: 30px; }
+        .btn {
+            padding: 15px 30px;
+            background-color: var(--accent);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .btn:hover { background-color: #1a5276; }
+        .switch-back {
+            position: absolute;
+            bottom: 20px;
+            font-size: 0.8rem;
+            color: #999;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="terminal-view" class="crt" onclick="document.getElementById('cmd').focus()">
+        <div class="container" id="terminal">
+            <div id="output"></div>
+            <div class="input-area hidden" id="input-line">
+                <span class="prompt">visitor@szilab:~$</span>
+                <input type="text" id="cmd" autocomplete="off" spellcheck="false" autofocus>
+            </div>
+            
+            <div id="manual-override" class="hidden" style="margin-top: 30px; border-top: 1px dashed #33ff00; padding-top: 10px; font-size: 0.8em; color: #fff;">
+                [TIPP]: Írd be a <span style="color:yellow">'start'</span> parancsot a grafikus felülethez, vagy <a class="term-link" onclick="triggerGui()">kattints ide</a>.
+            </div>
+        </div>
+    </div>
+
+    <div id="gui-view">
+        <h1 class="modern-title">SziLab</h1>
+        <p class="modern-subtitle">Szilágyi Illés webfejlesztő | Fót</p>
+        
+        <div style="max-width: 600px; line-height: 1.6; margin-bottom: 30px; color: #444;">
+            <p>Üdvözöllek a "való világban"! 👋</p>
+            <p>Ez már a modern, felhasználóbarát felület. Itt láthatják majd az ügyfeleid a referenciákat, a szolgáltatásokat és a kapcsolatfelvételi űrlapot.</p>
+            <p><i>(Ez a rész jelenleg demo, ide jön majd a WordPress vagy React oldalad.)</i></p>
+        </div>
+
+        <a href="mailto:hello@szilab.hu" class="btn">Projekt indítása</a>
+
+        <div class="switch-back" onclick="location.reload()">
+            &lt; Vissza a Terminálba
+        </div>
+    </div>
+
+    <script>
+        // --- KONFIGURÁCIÓ ---
+        const speed = 25; 
+        
+        const bootText = [
+            "Booting SziLab System...",
+            "Loading Core Modules... [OK]",
+            "Initializing Interface... [OK]",
+            "----------------------------------------",
+            "SZILAB.HU - DEVELOPMENT ENVIRONMENT",
+            "----------------------------------------",
+            "Szia! Szilágyi Illés vagyok.",
+            "Ez a fejlesztői bejárat (Terminal Mode).",
+            " ",
+            // ITT AZ ÚJ SZÖVEG:
+            "Ha a weboldalamat keresed, írd be: 'start'",
+            "(Vagy használd a 'gui' parancsot)",
+            " ",
+            "Ha maradnál a mátrixban, írd be: 'help'",
+            " "
+        ];
+
+        const outputDiv = document.getElementById('output');
+        const inputLine = document.getElementById('input-line');
+        const cmdInput = document.getElementById('cmd');
+        const manualOverride = document.getElementById('manual-override');
+        const terminalView = document.getElementById('terminal-view');
+        const guiView = document.getElementById('gui-view');
+
+        // --- GÉPELÉS ANIMÁCIÓ ---
+        async function typeWriter(text) {
+            const line = document.createElement('div');
+            // Kiemeljük a 'start' és 'gui' szavakat sárgával
+            if(text.includes("'start'")) text = text.replace("'start'", "<span style='color:yellow'>'start'</span>");
+            if(text.includes("'gui'")) text = text.replace("'gui'", "<span style='color:yellow'>'gui'</span>");
+            
+            line.innerHTML = text; 
+            line.style.marginBottom = "5px";
+            outputDiv.appendChild(line);
+            
+            window.scrollTo(0, document.body.scrollHeight);
+            const terminal = document.querySelector('.container');
+            terminal.scrollTop = terminal.scrollHeight;
+            await new Promise(r => setTimeout(r, speed * 2));
+        }
+
+        async function bootSequence() {
+            for (const line of bootText) {
+                const div = document.createElement('div');
+                // Itt is kiemeljük a parancsokat, hogy azonnal feltűnjön
+                let processedLine = line.replace("'start'", "<span style='color:#ffff00; font-weight:bold'>'start'</span>");
+                processedLine = processedLine.replace("'gui'", "<span style='color:#ffff00; font-weight:bold'>'gui'</span>");
+                
+                div.innerHTML = processedLine;
+                div.style.marginBottom = "5px";
+                outputDiv.appendChild(div);
+                const terminal = document.querySelector('.container');
+                terminal.scrollTop = terminal.scrollHeight;
+                await new Promise(r => setTimeout(r, 400));
+            }
+            inputLine.classList.remove('hidden');
+            manualOverride.classList.remove('hidden');
+            cmdInput.focus();
+        }
+
+        // --- GUI ÁTVÁLTÁS LOGIKA ---
+        function triggerGui() {
+            terminalView.classList.add('fade-out-terminal');
+            setTimeout(() => {
+                guiView.classList.add('fade-in-gui');
+            }, 500);
+        }
+
+        // --- BOT LOGIKA ---
+        const commands = {
+            'help': "PARANCSOK:<br> > start   :: Grafikus weboldal betöltése<br> > about   :: Rólam<br> > contact :: Kapcsolat<br> > clear   :: Törlés",
+            'about': "Webfejlesztés, automatizálás, egyedi megoldások. Fót / Budapest.",
+            'contact': "📧 hello@szilab.hu",
+            'sudo': "Nice try. 😉",
+            'ls': "index.html  secret_projects/",
+            'gui': "ACTION_GUI",
+            'start': "ACTION_GUI"
+        };
+
+        cmdInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const command = this.value.trim().toLowerCase();
+                
+                const userLine = document.createElement('div');
+                userLine.style.color = '#fff';
+                userLine.innerHTML = `<span class="prompt">visitor@szilab:~$</span> ${this.value}`;
+                outputDiv.appendChild(userLine);
+
+                let response = "";
+
+                if (command === 'gui' || command === 'start') {
+                    response = "Indítás...";
+                    triggerGui(); 
+                } 
+                else if (command === 'clear') {
+                    outputDiv.innerHTML = "";
+                } 
+                else if (commands[command]) {
+                    response = commands[command];
+                } 
+                else if (command === "") {
+                    response = ""; 
+                } 
+                else {
+                    response = `Ismeretlen parancs: '${command}'. Próbáld: 'start' vagy 'help'`;
+                }
+
+                if (response && command !== 'clear' && command !== 'gui' && command !== 'start') {
+                    const botLine = document.createElement('div');
+                    botLine.innerHTML = response;
+                    outputDiv.appendChild(botLine);
+                }
+
+                this.value = '';
+                const terminal = document.querySelector('.container');
+                terminal.scrollTop = terminal.scrollHeight;
+            }
+        });
+
+        setTimeout(bootSequence, 500);
+    </script>
+</body>
+</html>

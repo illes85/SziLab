@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SziLab | Under Construction</title>
+    <style>
+        body {
+            background-color: #1a1a1a; /* Sötétszürke háttér */
+            color: #00ff41; /* Klasszikus terminál zöld */
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .terminal {
+            max-width: 600px;
+            width: 100%;
+            background: #000;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+            border: 1px solid #333;
+        }
+        .command {
+            color: #fff;
+            font-weight: bold;
+            margin-bottom: 20px;
+            display: block;
+        }
+        .highlight {
+            color: #fff; /* Fehér kiemelés a szövegben */
+        }
+        .progress-bar {
+            margin: 15px 0 30px 0;
+        }
+        h1 {
+            font-size: 1.2em;
+            margin-top: 30px;
+            color: #fff;
+            border-bottom: 1px dashed #00ff41;
+            padding-bottom: 10px;
+            display: inline-block;
+        }
+        .content {
+            color: #ccc; /* Kicsit lágyabb szürke a folyó szövegnek */
+            margin-top: 20px;
+        }
+        .contact {
+            margin-top: 40px;
+            border-top: 1px solid #333;
+            padding-top: 20px;
+        }
+        a {
+            color: #00ff41;
+            text-decoration: none;
+            border-bottom: 1px dotted #00ff41;
+        }
+        a:hover {
+            background-color: #00ff41;
+            color: #000;
+        }
+        .cursor {
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="terminal">
+        <span class="command">root@szilab:~# ./init_website.sh</span>
+        
+        <div>> System check... OK</div>
+        <div>> Loading SziLab modules... OK</div>
+        <div class="progress-bar">> Compiling assets... [██████░░░░] 60%</div>
+
+        <h1>STATUS: WORK IN PROGRESS</h1>
+
+        <div class="content">
+            <p>
+                <span class="highlight">Hahó! Üdv a laborban.</span><br>
+                A rendszer még épül, de a háttérben már keverem a kódokat.<br>
+                <span class="highlight">Szilágyi Illés</span> vagyok, ez pedig a digitális műhelyem lesz.
+            </p>
+            
+            <p>[ AMIT ITT TALÁLSZ MAJD ]</p>
+            <ul>
+                <li>Egyedi weboldalkészítés</li>
+                <li>Saját fejlesztések & Kísérleti projektek</li>
+            </ul>
+        </div>
+
+        <div class="contact">
+            <p>Nem kell megvárnod a "100%"-ot. Ha van egy projekted, beszéljünk!</p>
+            <p>
+                📧 <a href="mailto:hello@szilab.hu">hello@szilab.hu</a><br>
+                📍 Budapest / Fót
+            </p>
+            <p>> <span class="cursor">_</span></p>
+        </div>
+    </div>
+
+</body>
+</html>
