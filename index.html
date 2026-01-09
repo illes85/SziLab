@@ -96,6 +96,28 @@
             font-family: 'VT323', monospace;
         }
 
+        #skip-btn {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            z-index: 100;
+            padding: 5px 10px;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        #skip-btn:hover {
+            color: var(--term-color);
+            border-color: var(--term-color);
+            background: rgba(0, 50, 0, 0.2);
+            text-shadow: 0 0 5px var(--term-color);
+        }
+
         .hidden { display: none !important; }
         a.term-link { color: #fff; text-decoration: underline; cursor: pointer; }
         a.term-link:hover { color: var(--term-color); background: #000; }
@@ -199,6 +221,7 @@
     <div id="white-flash" class="fixed inset-0 bg-white z-[100] pointer-events-none opacity-0 transition-opacity"></div>
 
     <div id="terminal-view" class="crt" style="display: none;" onclick="document.getElementById('cmd').focus()">
+        <div id="skip-btn" onclick="event.stopPropagation(); triggerGuiInstant()">[ ESC : SKIP INTRO ]</div>
         <div class="container-term" id="terminal">
             <div id="output"></div>
             <div class="input-area hidden" id="input-line">
@@ -578,6 +601,13 @@
         }
 
         document.addEventListener('keydown', resetAllTimers);
+
+        // ESCAPE GOMB KEZELÉSE (SKIP INTRO)
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Escape" && !guiView.classList.contains('show-gui')) {
+                triggerGuiInstant();
+            }
+        });
 
         // --- GÉPELÉS ANIMÁCIÓ ---
         async function typeWriter(text) {
