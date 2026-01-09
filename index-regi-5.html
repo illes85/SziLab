@@ -164,19 +164,6 @@
             animation: terminal-blink 1s step-end infinite;
         }
 
-        /* --- TERMINAL IMAGE STYLE (Profilkép) --- */
-        .term-img {
-            width: 120px;
-            height: auto;
-            border: 2px solid var(--term-color);
-            /* Ez a filter sor csinálja a varázslatot: zölddé és kontrasztossá teszi a fotót */
-            filter: grayscale(100%) sepia(100%) hue-rotate(50deg) saturate(300%) contrast(1.2) brightness(0.9);
-            image-rendering: pixelated; /* Pixelesítés */
-            margin-right: 20px;
-            opacity: 0.9;
-            box-shadow: 0 0 10px rgba(51, 255, 0, 0.3);
-        }
-
         @keyframes terminal-blink {
             0%, 100% { opacity: 1; }
             50% { opacity: 0; }
@@ -420,23 +407,23 @@
         // --- KONFIGURÁCIÓ (FINOMHANGOLÁS ITT!) ---
         const config = {
     typingSpeed: 25,          // Karakterek gépelési sebessége
-    bootLineDelay: 100,       // Boot sorok közötti várakozás (ms)
+    bootLineDelay: 150,       // Boot sorok közötti várakozás (ms)
     idleTimeDefault: 7000,    // Passzív várakozás (ms)
     idleTimeActive: 17000,    // Aktív (gépelés utáni) várakozás (ms)
     countdownTime: 3,         // Visszaszámlálás (másodperc)
-    introCursorTime: 2000,    // Kezdő villogó kurzor ideje (ms)
+    introCursorTime: 3000,    // Kezdő villogó kurzor ideje (ms)
 
     // Mátrix Effekt
-    matrixCurtainTime: 2000,  // "Függöny" fázis hossza (ms)
-    matrixTotalTime: 3500,    // Teljes Mátrix animáció hossza (ms)
-    matrixDensityStart: 1.5, // Kezdő sűrűség
+    matrixCurtainTime: 1500,  // "Függöny" fázis hossza (ms)
+    matrixTotalTime: 4500,    // Teljes Mátrix animáció hossza (ms)
+    matrixDensityStart: 0.98, // Kezdő sűrűség
     matrixDensityEnd: 0.01,   // Végleges sűrűség
-    matrixDensityStep: 0.05, // Sűrűsödés sebessége
+    matrixDensityStep: 0.005, // Sűrűsödés sebessége
 
     // Fehér Villanás (Flash)
     flashInDuration: 200,     // "BUMM": Fehéredés ideje (ms)
     flashOutDuration: 5000,   // "Tisztulás": Normál oldal megjelenése (ms)
-    flashSwitchDelay: 250     // Késleltetés a váltás előtt (ms)
+    flashSwitchDelay: 150     // Késleltetés a váltás előtt (ms)
 };
         
         const bootText = [
@@ -597,7 +584,7 @@
             // 1. TERMINÁL MEGJELENÍTÉSE ÜRESEN
             terminalView.style.display = 'flex';
 
-            // 1.5 KEZDETI VILLOGÓ KURZOR (A gép "éledezése")
+            // 2. INTRO KURZOR (Téglalap a szöveg helyén)
             const introDiv = document.createElement('div');
             introDiv.innerHTML = '<span class="cursor-block"></span>';
             outputDiv.appendChild(introDiv);
@@ -607,33 +594,19 @@
             // Kurzor törlése a boot előtt
             outputDiv.removeChild(introDiv);
 
-            // 2. BOOT SZÖVEG
-            for (let i = 0; i < bootText.length; i++) {
-                const line = bootText[i];
+            // 3. BOOT SZÖVEG
+            for (const line of bootText) {
                 const div = document.createElement('div');
                 let processedLine = line.replace("'start'", "<span style='color:#ffff00; font-weight:bold'>'start'</span>");
                 processedLine = processedLine.replace("'gui'", "<span style='color:#ffff00; font-weight:bold'>'gui'</span>");
                 
-                // Kurzor hozzáadása a sor végére
-                div.innerHTML = processedLine + '<span class="cursor-block"></span>';
+                div.innerHTML = processedLine;
                 div.style.marginBottom = "5px";
                 outputDiv.appendChild(div);
-                
                 const terminal = document.querySelector('.container-term');
                 terminal.scrollTop = terminal.scrollHeight;
-
-                // Várakozás (Lefagyás szimuláció)
-                if (i === 0) {
-                    await new Promise(r => setTimeout(r, 1200)); // Hosszabb szünet az elején
-                } else {
-                    const randomDelay = Math.floor(Math.random() * 200) + 50; // Átlag 150ms
-                    await new Promise(r => setTimeout(r, randomDelay));
-                }
-
-                // Kurzor eltávolítása a kész sorról (kivéve az utolsót, bár ott a prompt veszi át)
-                div.innerHTML = processedLine;
+                await new Promise(r => setTimeout(r, config.bootLineDelay));
             }
-
             inputLine.classList.remove('hidden');
             manualOverride.classList.remove('hidden');
             cmdInput.focus();
@@ -734,555 +707,100 @@
 
         // --- FÁJLRENDSZER MANKÓ ---
         const fileSystem = {
-    "root": {
-        "index.html": {
-            "type": "file",
-            "content": "GUI Launcher"
-        },
-        "games": {
-            "type": "dir",
-            "content": {
-                "guess.exe": {
-                    "type": "exe",
-                    "content": "Számkitaláló Játék"
-                },
-                "hack.exe": {
-                    "type": "exe",
-                    "content": "Reflex Hacker Játék"
-                },
-                "rps.exe": {
-                    "type": "exe",
-                    "content": "Kő-Papír-Olló (Classic)"
-                }
+            'root': {
+                'index.html': { type: 'file', content: 'GUI Launcher' },
+                'secret_projects': { type: 'dir', content: {} },
+                'README.txt': { type: 'file', content: 'Üdv a SziLab terminálban! Próbáld a "start" parancsot.' },
+                'contact.info': { type: 'file', content: 'hello@szilab.hu' }
             }
-        },
-        "secret_projects": {
-            "type": "dir",
-            "content": {
-                "project_alpha.txt": {
-                    "type": "file",
-                    "content": "Szigorúan titkos! Még fejlesztés alatt."
-                },
-                "passwords.txt": {
-                    "type": "file",
-                    "content": "admin: 12345 (ne felejtsd el megváltoztatni!)"
-                },
-                "project_manager.todo": {
-                    "type": "file",
-                    "content": "Projektek managelésére szolgáló munkafelület magamnak."
-                }
-            }
-        },
-        "README.txt": {
-            "type": "file",
-            "content": "Üdv a SziLab terminálban! Próbáld a \"start\" vagy \"help\" parancsot."
-        },
-        "contact.info": {
-            "type": "file",
-            "content": "hello@szilab.hu"
-        }
-    }
-};
-        let currentPath = []; // Üres tömb = root
-
-        // --- JÁTÉK ÁLLAPOT ---
-        let gameState = null; // null, 'guess', 'hack', 'rps'
-        let hackTimer;
-        let hackTarget = "";
-        let hackLevel = 1;
+        };
+        let currentPath = 'root';
 
         // --- BOT LOGIKA ---
         const commands = {
-            "about": `<div style="display:flex; align-items:flex-start; margin-top:10px; margin-bottom:10px;">
-                        <img src="me.jpg" class="term-img" alt="[HIÁNYZÓ KÉP: me.jpg]" onerror="this.style.display='none'">
-                        <div>
-                            <strong style="font-size:1.3em; letter-spacing:1px;">SZILÁGYI ILLÉS</strong><br>
-                            <span style="color:#aaa; font-style:italic;">Full-Stack Webfejlesztő & AI Specialista</span><br>
-                            <div style="margin-top:10px; line-height:1.4;">
-                                > <span style="color:#fff">Webfejlesztés:</span> Modern weboldalak, WooCommerce webáruházak, WordPress szakértő, egyedi kódolás.<br>
-                                > <span style="color:#fff">AI Megoldások:</span> Mesterséges intelligenciával támogatott applikációk és tartalom.<br>
-                                > <span style="color:#fff">Jövőkép:</span> Oktatási anyagok és tudásbázis építése fejlesztőknek.<br>
-                            </div>
-                        </div>
-                      </div>`,
-            
-            "contact, contact.txt": `<div style="border-left: 3px solid #33ff00; padding-left: 15px; margin-top:5px;">
-                                        <strong style="color:#fff">ELÉRHETŐSÉG</strong><br>
-                                        Név: Szilágyi Illés<br>
-                                        Bázis: Fót / Budapest<br>
-                                        Email: <a href="mailto:hello@szilab.hu" class="term-link">hello@szilab.hu</a><br>
-                                        <br>
-                                        Projekt indítása:<br>
-                                        [ <a href="#kapcsolat" class="term-link" onclick="triggerGuiInstant()">ŰRLAP MEGNYITÁSA</a> ]
-                                     </div>`,
-            
-            "sudo": "Nice try. 😉",
-            "gui, start": "ACTION_GUI",
-            
-            "help, segítség": "PARANCSOK:<br>" +
-                " > start / gui      :: Grafikus weboldal betöltése<br>" +
-                " > ls / dir         :: Fájlok listázása (aktuális mappa)<br>" +
-                " > cd <mappa>       :: Belépés mappába (.. = vissza)<br>" +
-                " > cat <fájl>       :: Fájl olvasása<br>" +
-                " > game / games     :: Játékok listázása<br>" +
-                " > guess.exe        :: Számkitaláló játék indítása<br>" +
-                " > hack.exe         :: Reflex Hacker játék indítása<br>" +
-                " > rps.exe          :: Kő-Papír-Olló játék indítása<br>" +
-                " > clear / cls      :: Képernyő törlése<br>" +
-                " > reset / restart  :: Rendszer újraindítása (glitch effekt)<br>" +
-                " > exit / close     :: Kilépés (kikapcsolás effekt)<br>" +
-                " > about            :: Bemutatkozás (Profil)<br>" +
-                " > contact          :: Kapcsolatfelvétel"
+            'help': "PARANCSOK:<br> > start / gui  :: Grafikus weboldal betöltése<br> > index.html   :: Azonnali GUI (nincs Mátrix)<br> > ls / dir     :: Fájlok listázása<br> > about        :: Rólam<br> > contact      :: Kapcsolat<br> > exit         :: Kilépés<br> > clear        :: Törlés",
+            'about': "Webfejlesztés, automatizálás, egyedi megoldások. Fót / Budapest.",
+            'contact': "📧 hello@szilab.hu",
+            'sudo': "Nice try. 😉",
+            'gui': "ACTION_GUI",
+            'start': "ACTION_GUI"
         };
 
-        // Segédfüggvény a fájlrendszer eléréséhez
-        function getFsItem(pathArray) {
-            let current = fileSystem['root'];
-            for (const part of pathArray) {
-                if (current[part] && current[part].type === 'dir') {
-                    current = current[part].content;
-                } else {
-                    return null;
-                }
+        cmdInput.addEventListener('keydown', function(e) {
+            // CTRL+C lekezelése
+            if (e.ctrlKey && e.key === 'c') {
+                const userLine = document.createElement('div');
+                userLine.style.color = '#fff';
+                userLine.innerHTML = `<span class="prompt">visitor@szilab:~$</span> ^C`;
+                outputDiv.appendChild(userLine);
+                
+                const exitLine = document.createElement('div');
+                exitLine.innerHTML = "Terminál leállítva. Viszlát! 👋 <br> [SziLab - Nem csak kódolok. Megoldást építek.]";
+                exitLine.style.color = "#ffff00";
+                outputDiv.appendChild(exitLine);
+                
+                // Opcionális: reload vagy fagyás
+                setTimeout(() => { location.reload(); }, 4000);
+                return;
             }
-            return current;
-        }
 
-        // Hack játék segédfüggvények
-        function generateHackString(length) {
-            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#@&";
-            let result = "";
-            for (let i = 0; i < length; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            if (e.key === 'Enter') {
+                const rawCommand = this.value.trim();
+                const command = rawCommand.toLowerCase();
+                
+                const userLine = document.createElement('div');
+                userLine.style.color = '#fff';
+                userLine.innerHTML = `<span class="prompt">visitor@szilab:~$</span> ${rawCommand}`; // Eredeti format megtartása
+                outputDiv.appendChild(userLine);
+
+                let response = "";
+
+                if (command === 'gui' || command === 'start') {
+                    response = "Rendszer indítása...";
+                    triggerGui(); 
+                } 
+                else if (command === 'index.html') {
+                    response = "Közvetlen betöltés...";
+                    triggerGuiInstant(); // Azonnali váltás
+                }
+                else if (command === 'ls' || command === 'dir') {
+                    // Egyszerű listázás a fileSystem alapján
+                    let files = Object.keys(fileSystem[currentPath]).map(key => {
+                        const item = fileSystem[currentPath][key];
+                        const color = item.type === 'dir' ? '#3b82f6' : '#33ff00';
+                        return `<span style="color:${color}">${key}</span>`;
+                    }).join('  ');
+                    response = files;
+                }
+                else if (command === 'clear') {
+                    outputDiv.innerHTML = "";
+                } 
+                else if (command === 'exit') {
+                    response = "Kijelentkezés...<br><span style='color:#ffff00'>Köszönöm, hogy benéztél!</span><br>-- SziLab --";
+                    setTimeout(() => { location.reload(); }, 3000);
+                }
+                else if (commands[command]) {
+                    response = commands[command];
+                } 
+                else if (command === "") {
+                    response = ""; 
+                } 
+                else {
+                    response = `Ismeretlen parancs: '${rawCommand}'. Próbáld: 'help'`;
+                }
+
+                if (response && command !== 'clear' && command !== 'gui' && command !== 'start' && command !== 'index.html') {
+                    const botLine = document.createElement('div');
+                    botLine.innerHTML = response;
+                    outputDiv.appendChild(botLine);
+                }
+
+                this.value = '';
+                const terminal = document.querySelector('.container-term');
+                terminal.scrollTop = terminal.scrollHeight;
             }
-            return result;
-        }
+        });
 
-        function startHackGame() {
-            outputDiv.innerHTML = ""; // Clear screen
-            gameState = 'hack';
-            hackLevel = 1;
-            nextHackLevel();
-        }
-
-        function nextHackLevel() {
-            const length = 3 + Math.floor(hackLevel / 2);
-            hackTarget = generateHackString(length);
-            const timeLimit = Math.max(2000, 5000 - (hackLevel * 300)); // Nehezítés
-            
-            const infoLine = document.createElement('div');
-            infoLine.innerHTML = `SZINT ${hackLevel} // CÉLPONT: <span style="color:#ff00ff; font-weight:bold; font-size:1.2em;">${hackTarget}</span> // IDŐ: ${(timeLimit/1000).toFixed(1)}s`;
-            outputDiv.appendChild(infoLine);
-            
-            // Auto-scroll
-            const terminal = document.querySelector('.container-term');
-            terminal.scrollTop = terminal.scrollHeight;
-
-            hackTimer = setTimeout(() => {
-                if (gameState === 'hack') {
-                    const failLine = document.createElement('div');
-                    failLine.innerHTML = `<span style="color:red">IDŐ LEJÁRT! ACCESS DENIED.</span><br>Elért szint: ${hackLevel}`;
-                    outputDiv.appendChild(failLine);
-                    gameState = null;
-                    terminal.scrollTop = terminal.scrollHeight;
-                }
-            }, timeLimit);
-        }
-        
-                // ASCII Artok
-                const rpsArt = {
-                    rock: `
-            _______
-        ---'   ____)
-              (_____)
-              (_____)
-              (____)
-        ---.__(___)`,
-                    paper: `
-            _______
-        ---'   ____)____
-                  ______)
-                  _______)
-                 _______)
-        ---.__________)`,
-                    scissors: `
-            _______
-        ---'   ____)____
-                  ______)
-               __________)
-              (____)
-        ---.__(___)`
-                };
-        
-                let rpsScores = { player: 0, cpu: 0 };
-        
-                // Rendszer újraindítás effekt
-                function systemReboot() {
-                    document.body.style.transition = "all 0.2s";
-                    document.body.style.filter = "hue-rotate(90deg) blur(5px) contrast(200%)";
-                    document.body.style.transform = "scale(1.02) skewX(2deg)";
-                    
-                    setTimeout(() => {
-                         document.body.style.filter = "invert(1)";
-                         document.body.style.transform = "scale(0.98) skewX(-2deg)";
-                    }, 800);
-        
-                     setTimeout(() => {
-                         location.reload();
-                    }, 2000);
-                }
-        
-                // Rendszer KIKAPCSOLÁS effekt (CRT Off - Line to Dot)
-                function systemShutdown() {
-                    // Előkészület: sötét háttér, hogy a "fény" látszódjon
-                    document.documentElement.style.background = "#000";
-                    document.body.style.background = "#0d1117"; 
-                    
-                    // 1. Fázis: Összenyomás vertikálisan (Vonal)
-                    document.body.style.transition = "transform 0.4s cubic-bezier(0.755, 0.050, 0.855, 0.060), filter 0.2s";
-                    document.body.style.transformOrigin = "center center";
-                    document.body.style.filter = "brightness(2.5) contrast(1.5)"; // Villanás
-                    document.body.style.transform = "scaleY(0.002) scaleX(1)";
-        
-                    setTimeout(() => {
-                         // 2. Fázis: Összenyomás horizontálisan (Pont)
-                         document.body.style.transition = "transform 0.2s cubic-bezier(0.755, 0.050, 0.855, 0.060)";
-                         document.body.style.transform = "scaleY(0.002) scaleX(0)";
-                    }, 400);
-        
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1200);
-                }
-        
-                cmdInput.addEventListener('keydown', function(e) {
-                    // CTRL+C
-                    if (e.ctrlKey && e.key === 'c') {
-                        const userLine = document.createElement('div');
-                        userLine.style.color = '#fff';
-                        userLine.innerHTML = `<span class="prompt">visitor@szilab:~$</span> ^C`;
-                        outputDiv.appendChild(userLine);
-                        
-                        if (gameState) {
-                            clearTimeout(hackTimer);
-                            gameState = null;
-                            const stopLine = document.createElement('div');
-                            stopLine.innerHTML = "Játék leállítva.";
-                            outputDiv.appendChild(stopLine);
-                        } else {
-                            const exitLine = document.createElement('div');
-                            exitLine.innerHTML = "Terminál leállítva.";
-                            exitLine.style.color = "#ffff00";
-                            outputDiv.appendChild(exitLine);
-                            setTimeout(() => { systemShutdown(); }, 800);
-                        }
-                        
-                        this.value = '';
-                        const terminal = document.querySelector('.container-term');
-                        terminal.scrollTop = terminal.scrollHeight;
-                        return;
-                    }
-        
-                    if (e.key === 'Enter') {
-                        const rawCommand = this.value.trim();
-                        const parts = rawCommand.split(' ');
-                        const command = parts[0].toLowerCase();
-                        const arg = parts.slice(1).join(' ');
-                        
-                        // Prompt kiírása (csak ha nem töröljük a képernyőt a játék miatt)
-                        if (gameState !== 'rps') {
-                            const pathStr = currentPath.length === 0 ? '~' : '~/' + currentPath.join('/');
-                            const userLine = document.createElement('div');
-                            userLine.style.color = '#fff';
-                            userLine.innerHTML = `<span class="prompt">visitor@szilab:${pathStr}$</span> ${rawCommand}`;
-                            outputDiv.appendChild(userLine);
-                        }
-        
-                        let response = "";
-        
-                        // --- JÁTÉK LOGIKA (Kiemelt prioritás!) ---
-                        if (gameState === 'guess') {
-                            const guess = parseInt(command);
-                            if (command === 'exit') {
-                                response = "Számkitaláló leállítva.";
-                                gameState = null;
-                            } else if (isNaN(guess)) {
-                                response = "Kérlek számot írj be! (vagy 'exit')";
-                            } else {
-                                window.guessCount++;
-                                if (guess === window.targetNumber) {
-                                    response = `<span style="color:#33ff00">GRATULÁLOK! Eltaláltad ${window.guessCount} tippből!</span><br>A szám tényleg ${window.targetNumber} volt.`;
-                                    gameState = null;
-                                } else if (guess < window.targetNumber) {
-                                    response = "Nagyobb számra gondoltam...";
-                                } else {
-                                    response = "Kisebb számra gondoltam...";
-                                }
-                            }
-                            // FONTOS: Megjelenítjük és kilépünk
-                            const botLine = document.createElement('div');
-                            botLine.innerHTML = response;
-                            outputDiv.appendChild(botLine);
-                            this.value = '';
-                            const terminal = document.querySelector('.container-term');
-                            terminal.scrollTop = terminal.scrollHeight;
-                            return; 
-                        }
-                        
-                        else if (gameState === 'hack') {
-                            clearTimeout(hackTimer);
-                            if (rawCommand === hackTarget) { 
-                                response = `<span style="color:#33ff00">ACCESS GRANTED.</span>`;
-                                const botLine = document.createElement('div');
-                                botLine.innerHTML = response;
-                                outputDiv.appendChild(botLine);
-                                
-                                hackLevel++;
-                                setTimeout(nextHackLevel, 500);
-                                this.value = '';
-                                return; 
-                            } else {
-                                response = `<span style="color:red">HIBA! A kód helytelen.</span><br>Helyes kód: ${hackTarget}<br>Játék vége.`;
-                                gameState = null;
-                                const botLine = document.createElement('div');
-                                botLine.innerHTML = response;
-                                outputDiv.appendChild(botLine);
-                                this.value = '';
-                                return;
-                            }
-                        }
-                        
-                        else if (gameState === 'rps') {
-                            // Kilépés kezelése
-                            if (command === 'exit') {
-                                outputDiv.innerHTML = ""; // Tiszta lap a végeredménynek
-                                let summaryColor = '#fff';
-                                let summaryText = "DÖNTETLEN";
-                                if(rpsScores.player > rpsScores.cpu) { summaryText = "GYŐZELEM!"; summaryColor = "#33ff00"; }
-                                if(rpsScores.player < rpsScores.cpu) { summaryText = "VERESÉG..."; summaryColor = "red"; }
-        
-                                response = `
-        <div style="text-align:center; margin-top:20px;">
-            === JÁTÉK VÉGE ===<br><br>
-            TE: ${rpsScores.player}  |  GÉP: ${rpsScores.cpu}<br>
-            <br>
-            <span style="font-size:2em; font-weight:bold; color:${summaryColor}">${summaryText}</span>
-            <br><br>
-            Kilépés...
-        </div>`;
-                                gameState = null;
-                                const botLine = document.createElement('div');
-                                botLine.innerHTML = response;
-                                outputDiv.appendChild(botLine);
-                                this.value = '';
-                                return;
-                            }
-        
-                            // 1: Kő, 2: Papír, 3: Olló
-                            const moveMap = { '1': 'rock', '2': 'paper', '3': 'scissors' };
-                            const nameMap = { 'rock': 'KŐ', 'paper': 'PAPÍR', 'scissors': 'OLLÓ' };
-                            
-                            if (moveMap[command]) {
-                                const playerMoveKey = moveMap[command];
-                                const moves = ['rock', 'paper', 'scissors'];
-                                const botMoveKey = moves[Math.floor(Math.random() * moves.length)];
-                                
-                                let result = "";
-                                let color = "";
-                                
-                                if (playerMoveKey === botMoveKey) {
-                                    result = "DÖNTETLEN!";
-                                    color = "#ffff00"; 
-                                } else if (
-                                    (playerMoveKey === 'rock' && botMoveKey === 'scissors') ||
-                                    (playerMoveKey === 'paper' && botMoveKey === 'rock') ||
-                                    (playerMoveKey === 'scissors' && botMoveKey === 'paper')
-                                ) {
-                                    result = "NYERTÉL!";
-                                    color = "#33ff00"; 
-                                    rpsScores.player++;
-                                } else {
-                                    result = "VESZTETTÉL!";
-                                    color = "red";
-                                    rpsScores.cpu++;
-                                }
-                                
-                                // KÉPERNYŐ TÖRLÉSE (Hogy ne follyon össze)
-                                outputDiv.innerHTML = "";
-        
-                                // ASCII Art és Eredmény renderelése
-                                response = `
-        <div style="border-bottom: 1px dashed #555; padding-bottom:10px; margin-bottom:10px;">
-            ÁLLÁS: <span style="color:#33ff00">TE: ${rpsScores.player}</span> | <span style="color:red">GÉP: ${rpsScores.cpu}</span>
-        </div>
-        <div style="display:flex; justify-content: space-around; font-size:12px; line-height:12px; margin-bottom:20px;">
-            <div style="text-align:center">
-                TE<br>
-                <span style="color:#33ff00; font-weight:bold">${nameMap[playerMoveKey]}</span>
-                <pre style="color:#33ff00; text-align:left;">${rpsArt[playerMoveKey]}</pre>
-            </div>
-            <div style="align-self:center; font-size:20px;">VS</div>
-            <div style="text-align:center">
-                GÉP<br>
-                <span style="color:red; font-weight:bold">${nameMap[botMoveKey]}</span>
-                <pre style="color:red; text-align:left;">${rpsArt[botMoveKey]}</pre>
-            </div>
-        </div>
-        <div style="text-align:center; margin-bottom:20px;">
-            <span style="color:${color}; font-weight:bold; font-size:2em; text-shadow:0 0 10px ${color}">${result}</span>
-        </div>
-        <div style="text-align:center; color:#888;">
-            Válassz fegyvert a következő körhöz:<br>
-            [1] Kő  [2] Papír  [3] Olló  (exit: Kilépés)
-        </div>`;
-                                
-                            } else {
-                                // Érvénytelen bemenet esetén nem törlünk mindent, csak szólunk
-                                response = "<span style='color:orange'>Érvénytelen. Használd az 1, 2, 3 billentyűket!</span>";
-                            }
-                            
-                            const botLine = document.createElement('div');
-                            botLine.innerHTML = response;
-                            outputDiv.appendChild(botLine);
-                            this.value = '';
-                            const terminal = document.querySelector('.container-term');
-                            terminal.scrollTop = terminal.scrollHeight;
-                            return;
-                        }
-                        
-                        // --- NORMÁL PARANCSOK ---
-                        
-                        const currentFolder = getFsItem(currentPath);
-        
-                        // 1. Fájl / EXE futtatása
-                        let isExeCall = false;
-                        if (currentFolder && currentFolder[command] && (currentFolder[command].type === 'exe' || command.endsWith('.exe'))) {
-                             isExeCall = true;
-                        }
-        
-                        if (command === 'guess.exe') {
-                            outputDiv.innerHTML = ""; 
-                            window.targetNumber = Math.floor(Math.random() * 100) + 1;
-                            window.guessCount = 0;
-                            gameState = 'guess';
-                            response = "=== SZÁMKITALÁLÓ ===<br>Gondoltam egy számra 1 és 100 között.<br>Írj be egy számot!";
-                        } 
-                        else if (command === 'hack.exe') {
-                            startHackGame();
-                            this.value = '';
-                            return;
-                        }
-                        else if (command === 'rps.exe') {
-                            outputDiv.innerHTML = "";
-                            gameState = 'rps';
-                            rpsScores = { player: 0, cpu: 0 }; // Reset scores
-                            response = `<span style='color:#f59e0b'>=== KŐ-PAPÍR-OLLÓ ===</span><br>
-        Válassz fegyvert:<br>
-        [1] KŐ<br>
-        [2] PAPÍR<br>
-        [3] OLLÓ<br>
-        (Kilépés: 'exit')`;
-                        }
-                        else if (command === 'game' || command === 'games') {
-                            // Játékok listázása
-                            response = "Elérhető játékok (indításhoz írd be a nevét vagy lépj a 'games' mappába):<br>- <span style='color:#f59e0b'>guess.exe</span> (Számkitaláló)<br>- <span style='color:#f59e0b'>hack.exe</span> (Reflex Hacker)<br>- <span style='color:#f59e0b'>rps.exe</span> (Kő-Papír-Olló)";
-                        }
-                        else if (isExeCall && !['guess.exe', 'hack.exe', 'rps.exe'].includes(command)) {
-                             response = `A(z) ${command} futtatása... hiba: Hiányzó modul.`;
-                        }
-                        else if (commands[command] === "ACTION_GUI" || (Object.keys(commands).find(key => key.split(', ').includes(command)) && commands[Object.keys(commands).find(key => key.split(', ').includes(command))] === "ACTION_GUI")) {
-                            response = "Rendszer indítása...";
-                            triggerGui(); 
-                        }
-                        else if (command === 'index.html') {
-                            response = "Közvetlen betöltés...";
-                            triggerGuiInstant(); 
-                        }
-                        else if (command === 'ls' || command === 'dir') {
-                            if (currentFolder) {
-                                let files = Object.keys(currentFolder).map(key => {
-                                    const item = currentFolder[key];
-                                    let color = '#33ff00'; // File (green)
-                                    if (item.type === 'dir') color = '#3b82f6'; // Dir (blue)
-                                    if (item.type === 'exe') color = '#f59e0b'; // Exe (orange)
-                                    
-                                    let suffix = '';
-                                    if (item.type === 'dir') suffix = '/';
-                                    if (item.type === 'exe') suffix = '*';
-                                    
-                                    return `<span style="color:${color}">${key}${suffix}</span>`;
-                                }).join('  ');
-                                response = files || "(üres)";
-                            } else {
-                                response = "Hiba: A mappa nem olvasható.";
-                            }
-                        }
-                        else if (command === 'cd') {
-                            if (!arg || arg === '~') {
-                                currentPath = [];
-                            } else if (arg === '..') {
-                                if (currentPath.length > 0) {
-                                    currentPath.pop();
-                                } else {
-                                    response = "Már a gyökérkönyvtárban vagy.";
-                                }
-                            } else {
-                                const target = getFsItem(currentPath);
-                                if (target && target[arg] && target[arg].type === 'dir') {
-                                    currentPath.push(arg);
-                                } else {
-                                    response = `cd: ${arg}: Nincs ilyen mappa`;
-                                }
-                            }
-                        }
-                        else if (command === 'cat' || command === 'type') {
-                            if (!arg) {
-                                response = "Használat: cat <fájlnév>";
-                            } else {
-                                const target = getFsItem(currentPath);
-                                if (target && target[arg]) {
-                                    if (target[arg].type === 'file') {
-                                        response = target[arg].content;
-                                    } else {
-                                        response = `cat: ${arg}: Ez egy mappa`;
-                                    }
-                                } else {
-                                    response = `cat: ${arg}: Nincs ilyen fájl`;
-                                }
-                            }
-                        }
-                        else if (command === 'clear' || command === 'cls') {
-                            outputDiv.innerHTML = "";
-                        } 
-                        else if (command === 'exit' || command === 'close') {
-                            response = "Rendszer leállítása... Viszlát! 👋";
-                            setTimeout(() => { systemShutdown(); }, 1500);
-                        }
-                        else if (command === 'reset' || command === 'restart') {
-                            response = "<span style='color:red; background:black; padding:2px;'>⚠️ SYSTEM REBOOT INITIATED ⚠️</span><br>Memória ürítése...";
-                            systemReboot();
-                        }
-                        else {
-                            // Keresés az Aliasok között
-                            const foundKey = Object.keys(commands).find(key => key.split(', ').includes(command));
-                            if (foundKey) {
-                                response = commands[foundKey];
-                            } else if (command !== "") {
-                                response = `Ismeretlen parancs: '${command}'. Próbáld: 'help'`;
-                            }
-                        }
-        
-                        if (response && !['clear', 'cls'].includes(command)) {
-                            const botLine = document.createElement('div');
-                            botLine.innerHTML = response;
-                            outputDiv.appendChild(botLine);
-                        }
-        
-                        this.value = '';
-                        const terminal = document.querySelector('.container-term');
-                        terminal.scrollTop = terminal.scrollHeight;
-                    }
-                });
         setTimeout(bootSequence, 500);
     </script>
 </body>

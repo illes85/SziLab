@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SziLab Configurator v8.3 (Final Fix)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'VT323', monospace; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #0d9488; cursor: pointer; margin-top: -6px; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #cbd5e1; border-radius: 2px; }
+        
+        .tab-btn.active { background-color: #0f172a; color: #33ff00; border-bottom: 2px solid #33ff00; }
+        .tab-btn { color: #64748b; }
+        .tab-btn:hover:not(.active) { color: #0f172a; background-color: #f1f5f9; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col overflow-hidden">
+
+    <header class="bg-slate-900 text-white p-4 shadow-lg sticky top-0 z-50 flex-shrink-0">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <h1 class="text-xl font-bold font-mono text-[#33ff00] flex items-center gap-2">
+                <span class="text-2xl">></span> SziLab Config <span class="text-xs bg-slate-800 px-2 py-1 rounded text-gray-400">v8.3</span>
+            </h1>
+            <div class="flex gap-3">
+                <label class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded text-sm font-bold transition cursor-pointer flex items-center gap-2 shadow-lg hover:shadow-blue-500/30">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    index.html Betöltése
+                    <input type="file" id="fileInput" accept=".html" class="hidden" onchange="handleFileUpload(this)">
+                </label>
+                <button id="downloadBtn" onclick="downloadFile()" disabled class="bg-gray-700 text-gray-500 px-4 py-2 rounded text-sm font-bold transition flex items-center gap-2 cursor-not-allowed border border-gray-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                    Mentés & Letöltés
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div id="statusMessage" class="bg-amber-50 text-amber-800 text-center p-2 text-xs font-bold border-b border-amber-100 flex-shrink-0">
+        ⚠️ Először töltsd be az index.html fájlt a szerkesztéshez!
+    </div>
+
+    <div class="bg-white border-b border-slate-200 flex-shrink-0">
+        <div class="max-w-7xl mx-auto flex">
+            <button onclick="switchTab('config')" class="tab-btn active px-6 py-3 text-sm font-bold transition w-1/3">1. Konfiguráció</button>
+            <button onclick="switchTab('filesystem')" class="tab-btn px-6 py-3 text-sm font-bold transition w-1/3">2. Fájlrendszer</button>
+            <button onclick="switchTab('commands')" class="tab-btn px-6 py-3 text-sm font-bold transition w-1/3">3. Parancsok</button>
+        </div>
+    </div>
+
+    <main class="flex-grow max-w-7xl mx-auto w-full p-4 overflow-hidden relative opacity-50 pointer-events-none transition-opacity" id="mainContent">
+        <!-- TAB 1: CONFIG -->
+        <div id="tab-config" class="tab-content h-full overflow-y-auto custom-scrollbar p-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-fit">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4 flex items-center gap-2">Boot & Terminál</h2>
+                <div class="space-y-6">
+                    <div>
+                        <div class="flex justify-between mb-1"><label class="text-xs font-bold text-slate-700">Boot Sorok Sebessége</label> <span id="val-bootLineDelay" class="text-xs font-mono text-primary bg-teal-50 px-1 rounded">400ms</span></div>
+                        <input type="range" id="bootLineDelay" min="50" max="1000" step="10" oninput="updateState()">
+                        <div class="flex justify-between text-[10px] text-gray-400 mt-1"><span>Gyorsabb</span><span>Lassabb</span></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1"><label class="text-xs font-bold text-slate-700">Kezdő Kurzor Villogás</label> <span id="val-introCursorTime" class="text-xs font-mono text-primary bg-teal-50 px-1 rounded">2000ms</span></div>
+                        <input type="range" id="introCursorTime" min="0" max="5000" step="100" oninput="updateState()">
+                        <div class="flex justify-between text-[10px] text-gray-400 mt-1"><span>Nincs</span><span>Hosszú</span></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1"><label class="text-xs font-bold text-slate-700">Tétlenségi Idő</label> <span id="val-idleTimeDefault" class="text-xs font-mono text-primary bg-teal-50 px-1 rounded">7000ms</span></div>
+                        <input type="range" id="idleTimeDefault" min="2000" max="20000" step="500" oninput="updateState()">
+                        <div class="flex justify-between text-[10px] text-gray-400 mt-1"><span>Ideges</span><span>Türelmes</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-fit">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4 flex items-center gap-2">Mátrix Effekt</h2>
+                <div class="space-y-6">
+                    <div>
+                        <div class="flex justify-between mb-1"><label class="text-xs font-bold text-slate-700">Teljes Hossz</label> <span id="val-matrixTotalTime" class="text-xs font-mono text-primary bg-teal-50 px-1 rounded">5000ms</span></div>
+                        <input type="range" id="matrixTotalTime" min="2000" max="10000" step="500" oninput="updateState()">
+                        <div class="flex justify-between text-[10px] text-gray-400 mt-1"><span>Rövid</span><span>Mozifilm</span></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1"><label class="text-xs font-bold text-slate-700">Függöny Hossz</label> <span id="val-matrixCurtainTime" class="text-xs font-mono text-primary bg-teal-50 px-1 rounded">1500ms</span></div>
+                        <input type="range" id="matrixCurtainTime" min="500" max="5000" step="100" oninput="updateState()">
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1"><label class="text-xs font-bold text-slate-700">Végső Sűrűség</label> <span id="val-matrixDensityEnd" class="text-xs font-mono text-primary bg-teal-50 px-1 rounded">0.05</span></div>
+                        <input type="range" id="matrixDensityEnd" min="0.01" max="0.5" step="0.01" oninput="updateState()">
+                        <div class="flex justify-between text-[10px] text-gray-400 mt-1"><span>Masszív</span><span>Ritkás</span></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1"><label class="text-xs font-bold text-slate-700">Sűrűsödés Sebessége</label> <span id="val-matrixDensityStep" class="text-xs font-mono text-primary bg-teal-50 px-1 rounded">0.005</span></div>
+                        <input type="range" id="matrixDensityStep" min="0.001" max="0.05" step="0.001" oninput="updateState()">
+                        <div class="flex justify-between text-[10px] text-gray-400 mt-1"><span>Lassú</span><span>Hirtelen</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-fit">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4 flex items-center gap-2">Fehér Villanás</h2>
+                <div class="space-y-6">
+                    <div>
+                        <div class="flex justify-between mb-1"><label class="text-xs font-bold text-slate-700">Beütés (Fade In)</label> <span id="val-flashInDuration" class="text-xs font-mono text-primary bg-teal-50 px-1 rounded">100ms</span></div>
+                        <input type="range" id="flashInDuration" min="0" max="1000" step="10" oninput="updateState()">
+                        <div class="flex justify-between text-[10px] text-gray-400 mt-1"><span>Azonnali</span><span>Lágy</span></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1"><label class="text-xs font-bold text-slate-700">Tisztulás (Fade Out)</label> <span id="val-flashOutDuration" class="text-xs font-mono text-primary bg-teal-50 px-1 rounded">2000ms</span></div>
+                        <input type="range" id="flashOutDuration" min="500" max="5000" step="100" oninput="updateState()">
+                        <div class="flex justify-between text-[10px] text-gray-400 mt-1"><span>Gyors</span><span>Ködös</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: FILE SYSTEM -->
+        <div id="tab-filesystem" class="tab-content hidden h-full flex flex-col">
+            <div class="bg-white rounded-xl shadow-md border border-slate-200 flex-grow flex flex-col overflow-hidden">
+                <div class="bg-slate-100 p-3 border-b border-slate-200 flex justify-between items-center flex-shrink-0">
+                    <div id="fs-breadcrumb" class="flex items-center gap-2 text-sm font-mono font-bold text-slate-600 overflow-x-auto">
+                        <span class="text-teal-600">root</span>
+                    </div>
+                    <button onclick="addFsItem()" class="bg-slate-900 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-700 transition flex items-center gap-1 flex-shrink-0">+ Új Elem</button>
+                </div>
+                <div id="fs-list" class="flex-grow overflow-y-auto p-4 space-y-2 bg-slate-50/50 custom-scrollbar pb-20"></div>
+            </div>
+        </div>
+
+        <!-- TAB 3: COMMANDS -->
+        <div id="tab-commands" class="tab-content hidden h-full flex flex-col">
+            <div class="bg-white rounded-xl shadow-md border border-slate-200 flex-grow flex flex-col overflow-hidden">
+                <div class="bg-slate-100 p-3 border-b border-slate-200 flex justify-between items-center flex-shrink-0">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Parancsok & Válaszok</h2>
+                    <button onclick="addCommand()" class="bg-slate-900 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-700 transition flex items-center gap-1">+ Új Parancs</button>
+                </div>
+                <div class="p-2 text-xs text-slate-500 text-center flex-shrink-0 bg-slate-50 border-b border-slate-200">
+                    Tipp: Írj be több parancsot vesszővel elválasztva (pl. "start, gui, go") az aliasokhoz.
+                </div>
+                <div id="commands-list" class="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar bg-slate-50/50 pb-20"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let originalHtmlContent = "";
+        let fsRoot = {}; 
+        let fsCurrentPath = []; 
+        let commandsData = {};
+
+        const configParams = [
+            'bootLineDelay', 'introCursorTime', 'idleTimeDefault', 
+            'matrixTotalTime', 'matrixCurtainTime', 'matrixDensityEnd', 'matrixDensityStep',
+            'flashInDuration', 'flashOutDuration'
+        ];
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById('tab-' + tabId);
+            if(target) target.classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.innerText.toLowerCase().includes(tabId));
+            if(btn) btn.classList.add('active');
+        }
+
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                originalHtmlContent = e.target.result;
+                if(parseHtml(originalHtmlContent)) {
+                    document.getElementById('mainContent').classList.remove('opacity-50', 'pointer-events-none');
+                    document.getElementById('statusMessage').textContent = "✅ Fájl sikeresen betöltve!";
+                    document.getElementById('statusMessage').className = "bg-green-50 text-green-800 text-center p-2 text-xs font-bold border-b border-green-100";
+                    const btn = document.getElementById('downloadBtn');
+                    btn.disabled = false;
+                    btn.classList.remove('bg-gray-700', 'text-gray-500', 'cursor-not-allowed', 'border-gray-600');
+                    btn.classList.add('bg-[#0d9488]', 'hover:bg-teal-700', 'text-white', 'border-teal-600', 'shadow-lg');
+                } else {
+                    alert("Nem sikerült értelmezni a fájlt.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function parseHtml(html) {
+            try {
+                configParams.forEach(key => {
+                    const regex = new RegExp(key + "\\s*:\\s*([0-9.]+) ");
+                    const match = html.match(regex);
+                    if (match) {
+                        const val = parseFloat(match[1]);
+                        const el = document.getElementById(key);
+                        if (el) { el.value = val; updateLabel(key, val); }
+                    }
+                });
+
+                const fsStart = html.indexOf('const fileSystem =');
+                if (fsStart > -1) {
+                    const braceStart = html.indexOf('{', fsStart);
+                    const braceEnd = findMatchingBrace(html, braceStart);
+                    if (braceEnd > -1) {
+                        const fsStr = html.substring(braceStart, braceEnd + 1);
+                        const fsObj = new Function('return ' + fsStr)();
+                        fsRoot = fsObj.root || {};
+                        fsCurrentPath = []; 
+                        renderFsList();
+                    }
+                }
+
+                const cmdStart = html.indexOf('const commands =');
+                if (cmdStart > -1) {
+                    const braceStart = html.indexOf('{', cmdStart);
+                    const braceEnd = findMatchingBrace(html, braceStart);
+                    if (braceEnd > -1) {
+                        const cmdStr = html.substring(braceStart, braceEnd + 1);
+                        commandsData = new Function('return ' + cmdStr)();
+                        renderCommands();
+                    }
+                }
+                return true;
+            } catch (e) {
+                console.error(e);
+                return false;
+            }
+        }
+
+        function findMatchingBrace(str, start) {
+            let count = 0;
+            for (let i = start; i < str.length; i++) {
+                if (str[i] === '{') count++;
+                else if (str[i] === '}') count--;
+                if (count === 0) return i;
+            }
+            return -1;
+        }
+
+        function updateState() {
+            configParams.forEach(key => {
+                const el = document.getElementById(key);
+                updateLabel(key, el.value);
+            });
+        }
+        function updateLabel(id, val) {
+            const el = document.getElementById('val-' + id);
+            if (el) el.textContent = val + (id.includes('Density') ? '' : 'ms');
+        }
+
+        function getCurrentFolder() {
+            let current = fsRoot;
+            for (const folder of fsCurrentPath) {
+                if (current[folder] && current[folder].type === 'dir') {
+                    current = current[folder].content;
+                }
+            }
+            return current;
+        }
+
+        function renderFsList() {
+            const list = document.getElementById('fs-list');
+            list.innerHTML = '';
+            
+            const bc = document.getElementById('fs-breadcrumb');
+            let bcHtml = '<span onclick="navFsRoot()" class="cursor-pointer hover:text-teal-500">root</span>';
+            fsCurrentPath.forEach((p, idx) => {
+                bcHtml += ' <span class="text-slate-400">/</span> <span onclick="navFsTo(' + idx + ')" class="cursor-pointer hover:text-teal-500">' + p + '</span>';
+            });
+            bc.innerHTML = bcHtml;
+
+            if (fsCurrentPath.length > 0) {
+                const backDiv = document.createElement('div');
+                backDiv.className = 'flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-slate-200 text-slate-500 font-mono text-sm border border-transparent hover:border-slate-300 transition';
+                backDiv.innerHTML = '📁 .. (Vissza)';
+                backDiv.onclick = navFsUp;
+                list.appendChild(backDiv);
+            }
+
+            const currentFolder = getCurrentFolder();
+            
+            Object.keys(currentFolder).forEach(key => {
+                const item = currentFolder[key];
+                const isDir = item.type === 'dir';
+                const isExe = item.type === 'exe';
+                let icon = isDir ? '📁' : (isExe ? '🕹️' : '📄');
+
+                const row = document.createElement('div');
+                row.className = "flex flex-col md:flex-row gap-2 bg-white p-3 rounded shadow-sm border border-slate-200 group hover:border-teal-400 transition items-start md:items-center";
+                
+                let contentHtml = '';
+                if (isDir) {
+                    contentHtml = '<button onclick="enterFolder(\' ' + key + '\u0027)" class="bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1 rounded text-xs font-bold hover:bg-blue-100 w-full md:w-auto">Megnyitás</button>';
+                } else {
+                    const safeContent = (item.content || '').replace(/"/g, '&quot;');
+                    contentHtml = '<textarea rows="1" class="w-full text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 focus:border-teal-500 outline-none font-mono resize-none" onchange="updateFileContent(\' ' + key + '\u0027, this.value)">' + safeContent + '</textarea>';
+                }
+
+                row.innerHTML = [
+                    '<div class="flex items-center gap-2 md:w-1/3 w-full">',
+                    '<div class="text-lg">' + icon + '</div>',
+                    '<input type="text" value="' + key + '" class="w-full font-bold text-sm bg-transparent border-b border-transparent hover:border-slate-300 focus:border-teal-500 outline-none" onchange="renameItem(\' ' + key + '\u0027, this.value)">',
+                    '<select class="text-xs bg-slate-50 border border-slate-200 rounded px-1 py-1 focus:border-teal-500 outline-none" onchange="updateFsType(\' ' + key + '\u0027, this.value)">',
+                    '<option value="file" ' + (!isDir && !isExe ? 'selected' : '') + '>File</option>',
+                    '<option value="dir" ' + (isDir ? 'selected' : '') + '>Mappa</option>',
+                    '<option value="exe" ' + (isExe ? 'selected' : '') + '>EXE</option>',
+                    '</select>',
+                    '</div>',
+                    '<div class="flex-grow flex items-center gap-2 w-full">' + contentHtml + '</div>',
+                    '<div class="flex items-center ml-auto">',
+                    '<button onclick="deleteItem(\' ' + key + '\u0027 )" class="text-red-400 hover:text-red-600 p-1 opacity-0 group-hover:opacity-100 transition" title="Törlés">',
+                    '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>',
+                    '</button>',
+                    '</div>'
+                ].join('');
+                
+                list.appendChild(row);
+            });
+        }
+
+        function navFsRoot() { fsCurrentPath = []; renderFsList(); }
+        function navFsUp() { fsCurrentPath.pop(); renderFsList(); }
+        function navFsTo(idx) { fsCurrentPath = fsCurrentPath.slice(0, idx + 1); renderFsList(); }
+        function enterFolder(key) { fsCurrentPath.push(key); renderFsList(); }
+
+        function addFsItem() {
+            const folder = getCurrentFolder();
+            let name = 'new_file';
+            let i = 1;
+            while(folder[name]) { name = 'new_file_' + i++; }
+            folder[name] = { type: 'file', content: '' };
+            renderFsList();
+        }
+        
+        function renameItem(oldKey, newKey) {
+            if (oldKey === newKey) return;
+            const folder = getCurrentFolder();
+            if (folder[newKey]) { alert('Ilyen név már van!'); renderFsList(); return; }
+            folder[newKey] = folder[oldKey];
+            delete folder[oldKey];
+            renderFsList();
+        }
+
+        function updateFsType(key, type) {
+            const folder = getCurrentFolder();
+            folder[key].type = type;
+            if (type === 'dir') folder[key].content = {};
+            else if (typeof folder[key].content === 'object') folder[key].content = "";
+            renderFsList();
+        }
+
+        function updateFileContent(key, val) {
+            const folder = getCurrentFolder();
+            if (folder[key]) folder[key].content = val;
+        }
+
+        function deleteItem(key) {
+            if(confirm('Törlöd?')) {
+                const folder = getCurrentFolder();
+                delete folder[key];
+                renderFsList();
+            }
+        }
+
+        function renderCommands() {
+            const list = document.getElementById('commands-list');
+            list.innerHTML = '';
+            
+            Object.keys(commandsData).forEach(key => {
+                const val = (commandsData[key] || '').replace(/"/g, '&quot;');
+                const row = document.createElement('div');
+                row.className = "flex flex-col gap-2 bg-slate-50 p-3 rounded border border-slate-200 group hover:border-teal-400 transition";
+                
+                const parts = key.split(',').map(s => s.trim());
+                const mainCmd = parts[0];
+                const aliases = parts.slice(1).join(', ');
+
+                row.innerHTML = [
+                    '<div class="flex items-center gap-2">',
+                    '<div class="w-1/3 flex flex-col">',
+                    '<label class="text-[10px] uppercase font-bold text-slate-400">Parancs</label>',
+                    '<input type="text" value="' + mainCmd + '" class="font-mono font-bold bg-white px-2 py-1 rounded border border-slate-300 focus:border-teal-500 outline-none" onchange="updateCommandKey(\' ' + key + '\u0027, this.value, \' ' + aliases + '\u0027)">',
+                    '</div>',
+                    '<div class="w-1/3 flex flex-col">',
+                    '<label class="text-[10px] uppercase font-bold text-slate-400">Aliasok (vesszővel)</label>',
+                    '<input type="text" value="' + aliases + '" class="font-mono text-xs bg-slate-100 px-2 py-1 rounded border border-slate-200 focus:border-teal-500 outline-none text-slate-600" onchange="updateCommandKey(\' ' + key + '\u0027, \' ' + mainCmd + '\u0027, this.value)">',
+                    '</div>',
+                    '<div class="ml-auto">',
+                    '<button onclick="deleteCommand(\' ' + key + '\u0027)" class="text-red-400 hover:text-red-600 p-1 opacity-0 group-hover:opacity-100 transition" title="Törlés">',
+                    '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>',
+                    '</button>',
+                    '</div>',
+                    '</div>',
+                    '<textarea rows="2" class="w-full text-sm bg-white border border-slate-300 rounded px-2 py-1 font-mono focus:border-teal-500 outline-none resize-y" onchange="updateCommandContent(\' ' + key + '\u0027, this.value)">' + val + '</textarea>'
+                ].join('');
+                list.appendChild(row);
+            });
+        }
+
+        function addCommand() {
+            let name = 'new_cmd';
+            while(commandsData[name]) name += '_';
+            commandsData[name] = "Válasz...";
+            renderCommands();
+        }
+
+        function updateCommandKey(oldKey, newMain, newAlias) {
+            let newKey = newMain.trim();
+            if (newAlias.trim()) { newKey += ', ' + newAlias.trim(); }
+            if (oldKey === newKey) return;
+            commandsData[newKey] = commandsData[oldKey];
+            delete commandsData[oldKey];
+            renderCommands();
+        }
+
+        function updateCommandContent(key, val) {
+            commandsData[key] = val;
+        }
+        function deleteCommand(key) {
+            if(confirm('Törlöd?')) { delete commandsData[key]; renderCommands(); }
+        }
+
+        function generateNewHtml() {
+            let newHtml = originalHtmlContent;
+            configParams.forEach(key => {
+                const val = document.getElementById(key).value;
+                const regex = new RegExp('(' + key + '\\s*:\\s*)([0-9.]+)');
+                newHtml = newHtml.replace(regex, '$1' + val);
+            });
+
+            const fullFs = { 'root': fsRoot };
+            const fsJson = JSON.stringify(fullFs, null, 4);
+            newHtml = newHtml.replace(/const fileSystem = \{[\s\S]*?\};/, 'const fileSystem = ' + fsJson + ';');
+
+            const cmdJson = JSON.stringify(commandsData, null, 4);
+            newHtml = newHtml.replace(/const commands = \{[\s\S]*?\};/, 'const commands = ' + cmdJson + ';');
+
+            return newHtml;
+        }
+
+        function downloadFile() {
+            if (!originalHtmlContent) return;
+            const content = generateNewHtml();
+            const blob = new Blob([content], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'index.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

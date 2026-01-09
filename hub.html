@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="hu" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SziLab Hub | Project Center</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0d9488', // Teal-600
+                        'primary-dark': '#0f766e', // Teal-700
+                        background: '#0f172a', // Slate-900
+                        surface: '#1e293b', // Slate-800
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['VT323', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .tech-border {
+            position: relative;
+        }
+        .tech-border::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #0d9488, transparent);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+    </style>
+</head>
+<body class="font-sans antialiased h-screen flex overflow-hidden selection:bg-teal-500 selection:text-white">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col hidden md:flex z-20">
+        <div class="p-6 flex items-center gap-3">
+            <div class="w-8 h-8 bg-teal-600 rounded flex items-center justify-center font-bold font-mono text-xl shadow-[0_0_10px_rgba(13,148,136,0.5)]">S</div>
+            <span class="text-xl font-bold tracking-tight">SziLab <span class="text-teal-500 text-xs uppercase tracking-widest ml-1">Hub</span></span>
+        </div>
+
+        <nav class="flex-1 px-4 space-y-2 mt-4">
+            <a href="#" onclick="switchTab('dashboard', this)" class="nav-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg bg-teal-900/30 text-teal-400 border border-teal-800/50">
+                <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                Áttekintés
+            </a>
+            
+            <div class="pt-4 pb-2">
+                <p class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Projektek</p>
+            </div>
+
+            <a href="#" onclick="switchTab('web', this)" class="nav-item group flex items-center px-3 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+                <svg class="mr-3 h-5 w-5 flex-shrink-0 text-slate-500 group-hover:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                Webfejlesztés
+            </a>
+
+            <a href="#" onclick="switchTab('robotics', this)" class="nav-item group flex items-center px-3 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+                <svg class="mr-3 h-5 w-5 flex-shrink-0 text-slate-500 group-hover:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                Robotika & IoT
+            </a>
+
+            <a href="#" onclick="switchTab('drone', this)" class="nav-item group flex items-center px-3 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+                <svg class="mr-3 h-5 w-5 flex-shrink-0 text-slate-500 group-hover:text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                Drón Projekt
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs text-slate-300">SZ</div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-white truncate">Szilágyi Illés</p>
+                    <p class="text-xs text-slate-500 truncate">Adminisztrátor</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col relative overflow-hidden bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-800 via-slate-900 to-slate-950">
+        
+        <!-- Mobile Header -->
+        <header class="md:hidden flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900/90 backdrop-blur">
+            <div class="font-bold text-lg text-white">SziLab Hub</div>
+            <button class="text-slate-400 p-2" onclick="document.querySelector('aside').classList.toggle('hidden'); document.querySelector('aside').classList.toggle('absolute'); document.querySelector('aside').classList.toggle('h-full');">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+        </header>
+
+        <!-- Dynamic Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-8" id="content-area">
+            
+            <!-- Dashboard View -->
+            <div id="view-dashboard" class="space-y-6 animate-fade-in">
+                <div class="flex justify-between items-end mb-2">
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">Műszerfal</h1>
+                        <p class="text-slate-400 text-sm mt-1">Üdv a laborban. Rendszerstátusz: <span class="text-teal-400 font-mono">ONLINE</span></p>
+                    </div>
+                    <button class="bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg shadow-teal-900/20 transition-all flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Új Projekt
+                    </button>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="glass-panel p-5 rounded-xl border-l-4 border-teal-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-slate-400 text-xs uppercase tracking-wider font-semibold">Aktív Projektek</p>
+                                <h3 class="text-3xl font-bold text-white mt-1">4</h3>
+                            </div>
+                            <span class="p-2 bg-teal-500/10 rounded-lg text-teal-400"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></span>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-xl border-l-4 border-blue-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-slate-400 text-xs uppercase tracking-wider font-semibold">Weboldalak</p>
+                                <h3 class="text-3xl font-bold text-white mt-1">2</h3>
+                            </div>
+                            <span class="p-2 bg-blue-500/10 rounded-lg text-blue-400"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg></span>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-xl border-l-4 border-purple-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-slate-400 text-xs uppercase tracking-wider font-semibold">IoT Eszközök</p>
+                                <h3 class="text-3xl font-bold text-white mt-1">3</h3>
+                            </div>
+                            <span class="p-2 bg-purple-500/10 rounded-lg text-purple-400"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></span>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-xl border-l-4 border-slate-600">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-slate-400 text-xs uppercase tracking-wider font-semibold">Következő Mérföldkő</p>
+                                <h3 class="text-xl font-bold text-white mt-1">Jan 15.</h3>
+                            </div>
+                            <span class="p-2 bg-slate-700 rounded-lg text-slate-400"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Projects Overview -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    
+                    <!-- Active List -->
+                    <div class="glass-panel rounded-xl p-6">
+                        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                            Folyamatban
+                        </h2>
+                        <div class="space-y-4">
+                            <!-- Item 1 -->
+                            <div class="bg-slate-800/50 p-4 rounded-lg hover:bg-slate-800 transition cursor-pointer border border-transparent hover:border-slate-700">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="font-semibold text-white">KKV Weboldal Csomag</h4>
+                                    <span class="text-xs px-2 py-1 bg-blue-900/50 text-blue-300 rounded border border-blue-800">Web</span>
+                                </div>
+                                <div class="w-full bg-slate-700 h-1.5 rounded-full mb-2">
+                                    <div class="bg-blue-500 h-1.5 rounded-full" style="width: 65%"></div>
+                                </div>
+                                <div class="flex justify-between text-xs text-slate-400">
+                                    <span>Frontend optimalizálás</span>
+                                    <span>65%</span>
+                                </div>
+                            </div>
+                            <!-- Item 2 -->
+                            <div class="bg-slate-800/50 p-4 rounded-lg hover:bg-slate-800 transition cursor-pointer border border-transparent hover:border-slate-700">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="font-semibold text-white">Okoskert (ESP32)</h4>
+                                    <span class="text-xs px-2 py-1 bg-green-900/50 text-green-300 rounded border border-green-800">IoT</span>
+                                </div>
+                                <div class="w-full bg-slate-700 h-1.5 rounded-full mb-2">
+                                    <div class="bg-green-500 h-1.5 rounded-full" style="width: 30%"></div>
+                                </div>
+                                <div class="flex justify-between text-xs text-slate-400">
+                                    <span>Szenzor kalibráció</span>
+                                    <span>30%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ideas / Backlog -->
+                    <div class="glass-panel rounded-xl p-6">
+                        <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                            Tervezőasztal & Backlog
+                        </h2>
+                        <ul class="space-y-3">
+                            <li class="flex items-center gap-3 text-slate-300 bg-slate-800/30 p-3 rounded-lg border border-slate-800/50">
+                                <div class="w-2 h-2 rounded-full bg-orange-500"></div>
+                                <span class="flex-1">Kertész Minirobot (váz tervezés)</span>
+                                <span class="text-xs text-slate-500 font-mono">ESP32</span>
+                            </li>
+                            <li class="flex items-center gap-3 text-slate-300 bg-slate-800/30 p-3 rounded-lg border border-slate-800/50">
+                                <div class="w-2 h-2 rounded-full bg-purple-500"></div>
+                                <span class="flex-1">Önvezető RC Autó (kamera int.)</span>
+                                <span class="text-xs text-slate-500 font-mono">Python/AI</span>
+                            </li>
+                            <li class="flex items-center gap-3 text-slate-300 bg-slate-800/30 p-3 rounded-lg border border-slate-800/50">
+                                <div class="w-2 h-2 rounded-full bg-sky-500"></div>
+                                <span class="flex-1">Drone Flight Controller</span>
+                                <span class="text-xs text-slate-500 font-mono">Future</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Robotics / IoT View (Template for other tabs) -->
+            <div id="view-robotics" class="hidden animate-fade-in">
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="p-3 bg-orange-500/20 rounded-xl text-orange-500">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-white">Robotika & IoT</h1>
+                        <p class="text-slate-400">Hardver fejlesztések, ESP32 projektek és automatizálás.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                    
+                    <!-- Kertész Robot Card -->
+                    <div class="xl:col-span-2 space-y-8">
+                        <div class="glass-panel p-6 rounded-xl border border-slate-700">
+                            <div class="flex justify-between items-start mb-6">
+                                <h3 class="text-xl font-bold text-white">🌱 Kertész Minirobot</h3>
+                                <span class="px-3 py-1 rounded-full text-xs font-bold bg-yellow-500/20 text-yellow-500 border border-yellow-500/30">TERVEZÉS ALATT</span>
+                            </div>
+                            
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                                    <h4 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Specifikációk</h4>
+                                    <ul class="text-sm space-y-2 text-slate-300 font-mono">
+                                        <li class="flex justify-between"><span>MCU:</span> <span class="text-teal-400">ESP32-WROOM</span></li>
+                                        <li class="flex justify-between"><span>Meghajtás:</span> <span>4x DC Motor + Driver</span></li>
+                                        <li class="flex justify-between"><span>Tápellátás:</span> <span>2x 18650 Li-ion</span></li>
+                                        <li class="flex justify-between"><span>Szenzorok:</span> <span>Talajnedvesség, Temp</span></li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                                    <h4 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Beszerzési Lista</h4>
+                                    <ul class="space-y-2 text-sm">
+                                        <li class="flex items-center gap-2 text-slate-500 line-through">
+                                            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                            ESP32 Fejlesztői lap
+                                        </li>
+                                        <li class="flex items-center gap-2 text-slate-300">
+                                            <div class="w-4 h-4 rounded border border-slate-600"></div>
+                                            L298N Motorvezérlő
+                                        </li>
+                                        <li class="flex items-center gap-2 text-slate-300">
+                                            <div class="w-4 h-4 rounded border border-slate-600"></div>
+                                            Robot alváz (3D nyomtatás?)
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 pt-6 border-t border-slate-800">
+                                <h4 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Napló</h4>
+                                <div class="text-sm text-slate-400 italic">
+                                    "A kerékfelfüggesztés még kérdéses. Lehet lánctalpas kellene a terep miatt?" - <span class="text-slate-600">2026.01.08.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Okosház Card -->
+                        <div class="glass-panel p-6 rounded-xl border border-slate-700">
+                             <div class="flex justify-between items-start mb-6">
+                                <h3 class="text-xl font-bold text-white">🏠 Okosház + AI Hangvezérlés</h3>
+                                <span class="px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-500 border border-blue-500/30">FEJLESZTÉS</span>
+                            </div>
+                            <p class="text-slate-400 mb-4">
+                                Saját fejlesztésű központi egység, ami helyi hálózaton kommunikál az ESP32 node-okkal. 
+                                Cél: Függetlenség a felhőtől (Local-first).
+                            </p>
+                            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                                <div class="bg-blue-600 h-full w-1/3"></div>
+                            </div>
+                            <div class="flex justify-between mt-2 text-xs text-slate-500 font-mono">
+                                <span>Prototype Phase</span>
+                                <span>33%</span>
+                            </div>
+                        </div>
+
+                        <!-- RC Autó Card -->
+                         <div class="glass-panel p-6 rounded-xl border border-slate-700">
+                             <div class="flex justify-between items-start mb-6">
+                                <h3 class="text-xl font-bold text-white">🏎️ Önvezető RC Autó</h3>
+                                <span class="px-3 py-1 rounded-full text-xs font-bold bg-purple-500/20 text-purple-500 border border-purple-500/30">KUTATÁS</span>
+                            </div>
+                            <p class="text-slate-400 mb-4">
+                                Computer Vision alapú sávtartás és objektumfelismerés. 
+                            </p>
+                             <ul class="space-y-2 text-sm text-slate-300">
+                                <li class="flex items-center gap-2">
+                                    <div class="w-4 h-4 rounded border border-slate-600"></div>
+                                    Kamera modul beszerzése
+                                </li>
+                                 <li class="flex items-center gap-2">
+                                    <div class="w-4 h-4 rounded border border-slate-600"></div>
+                                    OpenCV tesztek
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Side Stats for Category -->
+                    <div class="space-y-6">
+                        <div class="glass-panel p-6 rounded-xl bg-gradient-to-br from-orange-900/20 to-transparent">
+                            <h3 class="text-white font-bold mb-4">Raktárkészlet</h3>
+                            <div class="space-y-3 font-mono text-sm">
+                                <div class="flex justify-between text-slate-300">
+                                    <span>ESP32 Chips</span>
+                                    <span class="text-teal-400">5 db</span>
+                                </div>
+                                <div class="flex justify-between text-slate-300">
+                                    <span>Szervók</span>
+                                    <span class="text-teal-400">8 db</span>
+                                </div>
+                                <div class="flex justify-between text-slate-300">
+                                    <span>Szenzorok</span>
+                                    <span class="text-orange-400">Low</span>
+                                </div>
+                            </div>
+                            <button class="w-full mt-4 py-2 border border-slate-600 text-slate-300 rounded hover:bg-slate-800 text-xs uppercase tracking-wider transition">Készlet frissítése</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Web Views -->
+            <div id="view-web" class="hidden animate-fade-in">
+                 <div class="flex items-center gap-4 mb-8">
+                    <div class="p-3 bg-blue-500/20 rounded-xl text-blue-500">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-white">Webfejlesztés</h1>
+                        <p class="text-slate-400">Ügyfél weboldalak és belső eszközök.</p>
+                    </div>
+                </div>
+                 <div class="glass-panel p-8 rounded-xl border border-slate-700 mb-6">
+                    <h3 class="text-xl font-bold text-white mb-4">Aktív Megbízások</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-400">
+                            <thead class="text-xs text-slate-300 uppercase bg-slate-800/50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 rounded-l-lg">Ügyfél / Projekt</th>
+                                    <th scope="col" class="px-6 py-3">Határidő</th>
+                                    <th scope="col" class="px-6 py-3">Státusz</th>
+                                    <th scope="col" class="px-6 py-3 rounded-r-lg">Művelet</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="bg-transparent border-b border-slate-800 hover:bg-slate-800/30">
+                                    <td class="px-6 py-4 font-medium text-white">KKV Weboldal Csomag</td>
+                                    <td class="px-6 py-4">2026.02.01</td>
+                                    <td class="px-6 py-4"><span class="bg-blue-900 text-blue-300 px-2 py-0.5 rounded text-xs">Fejlesztés</span></td>
+                                    <td class="px-6 py-4"><a href="#" class="text-teal-400 hover:underline">Megnyitás</a></td>
+                                </tr>
+                                <tr class="bg-transparent border-b border-slate-800 hover:bg-slate-800/30">
+                                    <td class="px-6 py-4 font-medium text-white">Saját Portfólió (v3)</td>
+                                    <td class="px-6 py-4">-</td>
+                                    <td class="px-6 py-4"><span class="bg-green-900 text-green-300 px-2 py-0.5 rounded text-xs">Kész</span></td>
+                                    <td class="px-6 py-4"><a href="#" class="text-teal-400 hover:underline">Szerkesztés</a></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                 </div>
+            </div>
+
+            <!-- Drone Views -->
+            <div id="view-drone" class="hidden animate-fade-in">
+                 <div class="flex items-center gap-4 mb-8">
+                    <div class="p-3 bg-sky-500/20 rounded-xl text-sky-500">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-white">Drón Projekt <span class="text-xs align-top bg-slate-700 text-slate-300 px-2 py-0.5 rounded ml-2">LONG TERM</span></h1>
+                        <p class="text-slate-400">Önrepülő, autonóm repülő egység fejlesztése.</p>
+                    </div>
+                </div>
+                 <div class="glass-panel p-8 rounded-xl border border-slate-700">
+                     <h3 class="text-xl font-bold text-white mb-6">Roadmap</h3>
+                     <ul class="space-y-8 border-l-2 border-slate-700 ml-3 pl-8 relative">
+                         <li class="relative">
+                             <span class="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-slate-900 border-4 border-slate-700"></span>
+                             <h4 class="text-lg text-slate-200 font-bold">Koncepció & Váz</h4>
+                             <p class="text-slate-500 mt-1">Könnyűszerkezetes váz (carbon fiber?) kiválasztása. Légellenállás optimalizálás.</p>
+                         </li>
+                         <li class="relative">
+                             <span class="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-slate-900 border-4 border-slate-700"></span>
+                             <h4 class="text-lg text-slate-200 font-bold">Flight Controller</h4>
+                             <p class="text-slate-500 mt-1">Saját szoftver írása vagy ArduPilot alapok? A stabilitás a kulcs.</p>
+                         </li>
+                         <li class="relative">
+                             <span class="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-slate-900 border-4 border-slate-700"></span>
+                             <h4 class="text-lg text-slate-200 font-bold">AI Navigáció</h4>
+                             <p class="text-slate-500 mt-1">Kamera alapú akadályelkerülés. SLAM algoritmusok vizsgálata.</p>
+                         </li>
+                     </ul>
+                 </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        function switchTab(tabName, element) {
+            // Hide all views
+            const views = ['dashboard', 'web', 'robotics', 'drone'];
+            views.forEach(v => {
+                document.getElementById('view-' + v).classList.add('hidden');
+                document.getElementById('view-' + v).classList.remove('animate-fade-in'); // Reset animation
+            });
+
+            // Show selected
+            const selected = document.getElementById('view-' + tabName);
+            selected.classList.remove('hidden');
+            // Trigger reflow to restart animation
+            void selected.offsetWidth; 
+            selected.classList.add('animate-fade-in');
+
+            // Update active nav state
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                // Restore default styles
+                item.className = 'nav-item group flex items-center px-3 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors';
+                
+                // Fix icon color inside
+                const icon = item.querySelector('svg');
+                if(icon) {
+                     icon.classList.remove('text-teal-400', 'text-orange-400', 'text-sky-400');
+                     icon.classList.add('text-slate-500');
+                }
+            });
+
+            // Set active style for clicked element
+            if(element) {
+                element.className = 'nav-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg bg-teal-900/30 text-teal-400 border border-teal-800/50';
+                const icon = element.querySelector('svg');
+                if(icon) {
+                     icon.classList.remove('text-slate-500');
+                     // We keep the specific color class if it was added, but here we just simplify
+                }
+            }
+        }
+
+        // Add fade-in animation
+        document.head.insertAdjacentHTML('beforeend', `
+            <style>
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .animate-fade-in {
+                    animation: fadeIn 0.3s ease-out forwards;
+                }
+            </style>
+        `);
+    </script>
+</body>
+</html>
